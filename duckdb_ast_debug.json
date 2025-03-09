@@ -1,0 +1,280 @@
+{
+  "error": false,
+  "statements": [
+    {
+      "named_param_map": [],
+      "node": {
+        "children": [],
+        "cte_map": {
+          "map": []
+        },
+        "left": {
+          "children": [],
+          "cte_map": {
+            "map": []
+          },
+          "left": {
+            "aggregate_handling": "STANDARD_HANDLING",
+            "cte_map": {
+              "map": []
+            },
+            "from_table": {
+              "alias": "",
+              "query_location": 18446744073709551615,
+              "sample": null,
+              "type": "EMPTY"
+            },
+            "group_expressions": [],
+            "group_sets": [],
+            "having": null,
+            "modifiers": [],
+            "qualify": null,
+            "sample": null,
+            "select_list": [
+              {
+                "alias": "order_id",
+                "class": "CONSTANT",
+                "query_location": 50,
+                "type": "VALUE_CONSTANT",
+                "value": {
+                  "is_null": false,
+                  "type": {
+                    "id": "INTEGER",
+                    "type_info": null
+                  },
+                  "value": 101
+                }
+              },
+              {
+                "alias": "customer_id",
+                "class": "CONSTANT",
+                "query_location": 69,
+                "type": "VALUE_CONSTANT",
+                "value": {
+                  "is_null": false,
+                  "type": {
+                    "id": "INTEGER",
+                    "type_info": null
+                  },
+                  "value": 1
+                }
+              },
+              {
+                "alias": "order_date",
+                "class": "CONSTANT",
+                "query_location": 89,
+                "type": "VALUE_CONSTANT",
+                "value": {
+                  "is_null": false,
+                  "type": {
+                    "id": "VARCHAR",
+                    "type_info": null
+                  },
+                  "value": "2023-01-15"
+                }
+              },
+              {
+                "alias": "amount",
+                "class": "CONSTANT",
+                "query_location": 119,
+                "type": "VALUE_CONSTANT",
+                "value": {
+                  "is_null": false,
+                  "type": {
+                    "id": "DECIMAL",
+                    "type_info": {
+                      "alias": "",
+                      "extension_info": null,
+                      "scale": 2,
+                      "type": "DECIMAL_TYPE_INFO",
+                      "width": 4
+                    }
+                  },
+                  "value": 9999
+                }
+              }
+            ],
+            "type": "SELECT_NODE",
+            "where_clause": null
+          },
+          "modifiers": [],
+          "right": {
+            "aggregate_handling": "STANDARD_HANDLING",
+            "cte_map": {
+              "map": []
+            },
+            "from_table": {
+              "alias": "",
+              "query_location": 18446744073709551615,
+              "sample": null,
+              "type": "EMPTY"
+            },
+            "group_expressions": [],
+            "group_sets": [],
+            "having": null,
+            "modifiers": [],
+            "qualify": null,
+            "sample": null,
+            "select_list": [
+              {
+                "alias": "order_id",
+                "class": "CONSTANT",
+                "query_location": 154,
+                "type": "VALUE_CONSTANT",
+                "value": {
+                  "is_null": false,
+                  "type": {
+                    "id": "INTEGER",
+                    "type_info": null
+                  },
+                  "value": 102
+                }
+              },
+              {
+                "alias": "customer_id",
+                "class": "CONSTANT",
+                "query_location": 173,
+                "type": "VALUE_CONSTANT",
+                "value": {
+                  "is_null": false,
+                  "type": {
+                    "id": "INTEGER",
+                    "type_info": null
+                  },
+                  "value": 1
+                }
+              },
+              {
+                "alias": "order_date",
+                "class": "CONSTANT",
+                "query_location": 193,
+                "type": "VALUE_CONSTANT",
+                "value": {
+                  "is_null": false,
+                  "type": {
+                    "id": "VARCHAR",
+                    "type_info": null
+                  },
+                  "value": "2023-03-10"
+                }
+              },
+              {
+                "alias": "amount",
+                "class": "CONSTANT",
+                "query_location": 223,
+                "type": "VALUE_CONSTANT",
+                "value": {
+                  "is_null": false,
+                  "type": {
+                    "id": "DECIMAL",
+                    "type_info": {
+                      "alias": "",
+                      "extension_info": null,
+                      "scale": 2,
+                      "type": "DECIMAL_TYPE_INFO",
+                      "width": 5
+                    }
+                  },
+                  "value": 14999
+                }
+              }
+            ],
+            "type": "SELECT_NODE",
+            "where_clause": null
+          },
+          "setop_all": true,
+          "setop_type": "UNION",
+          "type": "SET_OPERATION_NODE"
+        },
+        "modifiers": [],
+        "right": {
+          "aggregate_handling": "STANDARD_HANDLING",
+          "cte_map": {
+            "map": []
+          },
+          "from_table": {
+            "alias": "",
+            "query_location": 18446744073709551615,
+            "sample": null,
+            "type": "EMPTY"
+          },
+          "group_expressions": [],
+          "group_sets": [],
+          "having": null,
+          "modifiers": [],
+          "qualify": null,
+          "sample": null,
+          "select_list": [
+            {
+              "alias": "order_id",
+              "class": "CONSTANT",
+              "query_location": 259,
+              "type": "VALUE_CONSTANT",
+              "value": {
+                "is_null": false,
+                "type": {
+                  "id": "INTEGER",
+                  "type_info": null
+                },
+                "value": 103
+              }
+            },
+            {
+              "alias": "customer_id",
+              "class": "CONSTANT",
+              "query_location": 278,
+              "type": "VALUE_CONSTANT",
+              "value": {
+                "is_null": false,
+                "type": {
+                  "id": "INTEGER",
+                  "type_info": null
+                },
+                "value": 2
+              }
+            },
+            {
+              "alias": "order_date",
+              "class": "CONSTANT",
+              "query_location": 298,
+              "type": "VALUE_CONSTANT",
+              "value": {
+                "is_null": false,
+                "type": {
+                  "id": "VARCHAR",
+                  "type_info": null
+                },
+                "value": "2023-02-22"
+              }
+            },
+            {
+              "alias": "amount",
+              "class": "CONSTANT",
+              "query_location": 328,
+              "type": "VALUE_CONSTANT",
+              "value": {
+                "is_null": false,
+                "type": {
+                  "id": "DECIMAL",
+                  "type_info": {
+                    "alias": "",
+                    "extension_info": null,
+                    "scale": 2,
+                    "type": "DECIMAL_TYPE_INFO",
+                    "width": 5
+                  }
+                },
+                "value": 19999
+              }
+            }
+          ],
+          "type": "SELECT_NODE",
+          "where_clause": null
+        },
+        "setop_all": true,
+        "setop_type": "UNION",
+        "type": "SET_OPERATION_NODE"
+      }
+    }
+  ]
+}
