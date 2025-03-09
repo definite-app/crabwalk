@@ -1,3 +1,11 @@
 /target
 target/
 *.db
+*.parquet
+/output/
+duckdb_ast_debug.json
+
+# Keep directory structure but ignore contents
+!examples/simple/output/
+examples/simple/output/*
+!examples/simple/output/.gitkeep
