@@ -1,8 +1,8 @@
 graph TD
     customer_orders
+    stg_orders
     order_summary
     stg_customers
-    stg_orders
-    stg_orders --> customer_orders
     stg_customers --> customer_orders
+    stg_orders --> customer_orders
     stg_orders --> order_summary

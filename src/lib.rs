@@ -2,6 +2,7 @@ pub mod cli;
 pub mod config;
 pub mod executor;
 pub mod parser;
+pub mod schema;
 pub mod storage;
 
 use anyhow::Result;
@@ -68,6 +69,9 @@ impl Crabwalk {
         
         // Generate lineage diagram
         parser::lineage::generate_mermaid_diagram(&self.sql_folder, &dependencies)?;
+        
+        // Generate database schema XML
+        schema::generate_database_schema(&dependencies, &format!("{}/database_schema.xml", self.sql_folder))?;
         
         tracing::info!("Crabwalk transformation pipeline completed successfully");
         
@@ -145,6 +149,11 @@ impl Crabwalk {
             tracing::warn!("Could not generate lineage diagram: {}", e);
         }
         
+        // Generate database schema XML if possible
+        if let Err(e) = schema::generate_database_schema(&dependencies, &format!("{}/database_schema.xml", self.sql_folder)) {
+            tracing::warn!("Could not generate database schema: {}", e);
+        }
+        
         tracing::info!("Crabwalk force mode completed, processed {} files", file_count);
         
         Ok(())
@@ -159,6 +168,25 @@ impl Crabwalk {
         parser::lineage::generate_mermaid_diagram(&self.sql_folder, &dependencies)?;
         
         tracing::info!("Lineage diagram generation completed");
+        
+        Ok(())
+    }
+    
+    /// Generate database schema XML
+    pub fn generate_schema(&self, output_path: Option<&str>) -> Result<()> {
+        // Get dependencies from SQL files
+        let dependencies = parser::dependencies::get_dependencies(&self.sql_folder, &self.dialect)?;
+        
+        // Determine output path
+        let schema_path = match output_path {
+            Some(path) => path.to_string(),
+            None => format!("{}/database_schema.xml", self.sql_folder),
+        };
+        
+        // Generate schema XML
+        schema::generate_database_schema(&dependencies, &schema_path)?;
+        
+        tracing::info!("Database schema generation completed");
         
         Ok(())
     }

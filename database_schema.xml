@@ -1,0 +1,797 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<database name="crabwalk_jaffle_shop">
+  <description>
+    Crabwalk demo database for the Jaffle Shop example. This schema follows a typical analytics structure with
+    three layers: raw data (source tables), staging (cleaned data), and marts (final analytics tables).
+  </description>
+  
+  <!-- Raw Data Layer -->
+  <schema name="raw">
+    <description>Raw data layer containing source tables directly loaded from CSV files</description>
+    
+    <table name="raw_customers">
+      <description>Customer information source data</description>
+      <column name="id" type="UUID" primary_key="true">
+        <description>Unique customer identifier</description>
+        <sample>f9e82984-3589-4cc2-a1c0-c36d9a1fb06e</sample>
+      </column>
+      <column name="name" type="text">
+        <description>Customer name</description>
+        <sample>John Smith</sample>
+      </column>
+      <sample_data>
+        <row>
+          <id>f9e82984-3589-4cc2-a1c0-c36d9a1fb06e</id>
+          <name>John Smith</name>
+        </row>
+        <row>
+          <id>c8879202-3c46-4a1e-8b18-395868caa602</id>
+          <name>Jane Doe</name>
+        </row>
+      </sample_data>
+    </table>
+    
+    <table name="raw_orders">
+      <description>Order header information source data</description>
+      <column name="id" type="integer" primary_key="true">
+        <description>Unique order identifier</description>
+        <sample>1001</sample>
+      </column>
+      <column name="store_id" type="integer">
+        <description>Store where order was placed</description>
+        <sample>42</sample>
+        <references table="raw_stores" column="id"/>
+      </column>
+      <column name="customer" type="UUID">
+        <description>Customer who placed the order</description>
+        <sample>f9e82984-3589-4cc2-a1c0-c36d9a1fb06e</sample>
+        <references table="raw_customers" column="id"/>
+      </column>
+      <column name="subtotal" type="integer">
+        <description>Order subtotal in cents</description>
+        <sample>1299</sample>
+      </column>
+      <column name="tax_paid" type="integer">
+        <description>Tax amount in cents</description>
+        <sample>104</sample>
+      </column>
+      <column name="order_total" type="integer">
+        <description>Total order amount in cents</description>
+        <sample>1403</sample>
+      </column>
+      <column name="ordered_at" type="timestamp">
+        <description>When the order was placed</description>
+        <sample>2023-01-15 14:30:45</sample>
+      </column>
+      <sample_data>
+        <row>
+          <id>1001</id>
+          <store_id>42</store_id>
+          <customer>f9e82984-3589-4cc2-a1c0-c36d9a1fb06e</customer>
+          <subtotal>1299</subtotal>
+          <tax_paid>104</tax_paid>
+          <order_total>1403</order_total>
+          <ordered_at>2023-01-15 14:30:45</ordered_at>
+        </row>
+      </sample_data>
+    </table>
+    
+    <table name="raw_items">
+      <description>Individual order line items source data</description>
+      <column name="id" type="integer" primary_key="true">
+        <description>Unique item identifier</description>
+        <sample>10001</sample>
+      </column>
+      <column name="order_id" type="integer">
+        <description>Order this item belongs to</description>
+        <sample>1001</sample>
+        <references table="raw_orders" column="id"/>
+      </column>
+      <column name="sku" type="text">
+        <description>Product SKU</description>
+        <sample>JAFFLE-1001</sample>
+        <references table="raw_products" column="sku"/>
+      </column>
+      <sample_data>
+        <row>
+          <id>10001</id>
+          <order_id>1001</order_id>
+          <sku>JAFFLE-1001</sku>
+        </row>
+        <row>
+          <id>10002</id>
+          <order_id>1001</order_id>
+          <sku>DRINK-1002</sku>
+        </row>
+      </sample_data>
+    </table>
+    
+    <table name="raw_products">
+      <description>Product information source data</description>
+      <column name="sku" type="text" primary_key="true">
+        <description>Unique product SKU</description>
+        <sample>JAFFLE-1001</sample>
+      </column>
+      <column name="name" type="text">
+        <description>Product name</description>
+        <sample>Classic Jaffle</sample>
+      </column>
+      <column name="type" type="text">
+        <description>Product type (jaffle, beverage, etc.)</description>
+        <sample>jaffle</sample>
+      </column>
+      <column name="description" type="text">
+        <description>Product description</description>
+        <sample>Our classic cheese and tomato jaffle</sample>
+      </column>
+      <column name="price" type="integer">
+        <description>Product price in cents</description>
+        <sample>899</sample>
+      </column>
+      <sample_data>
+        <row>
+          <sku>JAFFLE-1001</sku>
+          <name>Classic Jaffle</name>
+          <type>jaffle</type>
+          <description>Our classic cheese and tomato jaffle</description>
+          <price>899</price>
+        </row>
+        <row>
+          <sku>DRINK-1002</sku>
+          <name>Flat White</name>
+          <type>beverage</type>
+          <description>Espresso-based coffee drink</description>
+          <price>499</price>
+        </row>
+      </sample_data>
+    </table>
+    
+    <table name="raw_stores">
+      <description>Store/location information source data</description>
+      <column name="id" type="integer" primary_key="true">
+        <description>Unique store identifier</description>
+        <sample>42</sample>
+      </column>
+      <column name="name" type="text">
+        <description>Store name</description>
+        <sample>Downtown Jaffle Shop</sample>
+      </column>
+      <column name="tax_rate" type="decimal">
+        <description>Store tax rate</description>
+        <sample>0.08</sample>
+      </column>
+      <column name="opened_at" type="timestamp">
+        <description>When the store opened</description>
+        <sample>2022-01-05 09:00:00</sample>
+      </column>
+      <sample_data>
+        <row>
+          <id>42</id>
+          <name>Downtown Jaffle Shop</name>
+          <tax_rate>0.08</tax_rate>
+          <opened_at>2022-01-05 09:00:00</opened_at>
+        </row>
+        <row>
+          <id>43</id>
+          <name>Uptown Jaffle Shop</name>
+          <tax_rate>0.085</tax_rate>
+          <opened_at>2022-03-15 09:00:00</opened_at>
+        </row>
+      </sample_data>
+    </table>
+    
+    <table name="raw_supplies">
+      <description>Supplies needed for products source data</description>
+      <column name="id" type="integer" primary_key="true">
+        <description>Unique supply identifier</description>
+        <sample>5001</sample>
+      </column>
+      <column name="sku" type="text">
+        <description>Product this supply is for</description>
+        <sample>JAFFLE-1001</sample>
+        <references table="raw_products" column="sku"/>
+      </column>
+      <column name="name" type="text">
+        <description>Supply name</description>
+        <sample>Cheese</sample>
+      </column>
+      <column name="cost" type="integer">
+        <description>Supply cost in cents</description>
+        <sample>125</sample>
+      </column>
+      <column name="perishable" type="boolean">
+        <description>Whether the supply is perishable</description>
+        <sample>true</sample>
+      </column>
+      <sample_data>
+        <row>
+          <id>5001</id>
+          <sku>JAFFLE-1001</sku>
+          <name>Cheese</name>
+          <cost>125</cost>
+          <perishable>true</perishable>
+        </row>
+        <row>
+          <id>5002</id>
+          <sku>JAFFLE-1001</sku>
+          <name>Bread</name>
+          <cost>75</cost>
+          <perishable>true</perishable>
+        </row>
+      </sample_data>
+    </table>
+  </schema>
+  
+  <!-- Staging Layer -->
+  <schema name="staging">
+    <description>Staging layer with cleaned and standardized data</description>
+    
+    <table name="stg_customers">
+      <description>Cleaned and standardized customer data</description>
+      <column name="customer_id" type="UUID" primary_key="true">
+        <description>Unique customer identifier</description>
+        <sample>f9e82984-3589-4cc2-a1c0-c36d9a1fb06e</sample>
+      </column>
+      <column name="customer_name" type="text">
+        <description>Customer name</description>
+        <sample>John Smith</sample>
+      </column>
+      <source_dependencies>
+        <dependency table="raw.raw_customers" type="transformation"/>
+      </source_dependencies>
+    </table>
+    
+    <table name="stg_orders">
+      <description>Cleaned and standardized order data</description>
+      <column name="order_id" type="integer" primary_key="true">
+        <description>Unique order identifier</description>
+        <sample>1001</sample>
+      </column>
+      <column name="location_id" type="integer">
+        <description>Store where order was placed</description>
+        <sample>42</sample>
+        <references table="stg_locations" column="location_id"/>
+      </column>
+      <column name="customer_id" type="UUID">
+        <description>Customer who placed the order</description>
+        <sample>f9e82984-3589-4cc2-a1c0-c36d9a1fb06e</sample>
+        <references table="stg_customers" column="customer_id"/>
+      </column>
+      <column name="subtotal_cents" type="integer">
+        <description>Order subtotal in cents</description>
+        <sample>1299</sample>
+      </column>
+      <column name="tax_paid_cents" type="integer">
+        <description>Tax amount in cents</description>
+        <sample>104</sample>
+      </column>
+      <column name="order_total_cents" type="integer">
+        <description>Total order amount in cents</description>
+        <sample>1403</sample>
+      </column>
+      <column name="subtotal" type="decimal">
+        <description>Order subtotal in dollars</description>
+        <sample>12.99</sample>
+      </column>
+      <column name="tax_paid" type="decimal">
+        <description>Tax amount in dollars</description>
+        <sample>1.04</sample>
+      </column>
+      <column name="order_total" type="decimal">
+        <description>Total order amount in dollars</description>
+        <sample>14.03</sample>
+      </column>
+      <column name="ordered_at" type="date">
+        <description>When the order was placed</description>
+        <sample>2023-01-15</sample>
+      </column>
+      <source_dependencies>
+        <dependency table="raw.raw_orders" type="transformation"/>
+      </source_dependencies>
+    </table>
+    
+    <table name="stg_order_items">
+      <description>Cleaned and standardized order item data</description>
+      <column name="order_item_id" type="integer" primary_key="true">
+        <description>Unique item identifier</description>
+        <sample>10001</sample>
+      </column>
+      <column name="order_id" type="integer">
+        <description>Order this item belongs to</description>
+        <sample>1001</sample>
+        <references table="stg_orders" column="order_id"/>
+      </column>
+      <column name="product_id" type="text">
+        <description>Product identifier</description>
+        <sample>JAFFLE-1001</sample>
+        <references table="stg_products" column="product_id"/>
+      </column>
+      <source_dependencies>
+        <dependency table="raw.raw_items" type="transformation"/>
+      </source_dependencies>
+    </table>
+    
+    <table name="stg_products">
+      <description>Cleaned and standardized product data with derived columns</description>
+      <column name="product_id" type="text" primary_key="true">
+        <description>Unique product identifier</description>
+        <sample>JAFFLE-1001</sample>
+      </column>
+      <column name="product_name" type="text">
+        <description>Product name</description>
+        <sample>Classic Jaffle</sample>
+      </column>
+      <column name="product_type" type="text">
+        <description>Product type</description>
+        <sample>jaffle</sample>
+      </column>
+      <column name="product_description" type="text">
+        <description>Product description</description>
+        <sample>Our classic cheese and tomato jaffle</sample>
+      </column>
+      <column name="product_price" type="decimal">
+        <description>Product price in dollars</description>
+        <sample>8.99</sample>
+      </column>
+      <column name="is_food_item" type="boolean">
+        <description>Whether the product is a food item</description>
+        <sample>true</sample>
+      </column>
+      <column name="is_drink_item" type="boolean">
+        <description>Whether the product is a drink item</description>
+        <sample>false</sample>
+      </column>
+      <source_dependencies>
+        <dependency table="raw.raw_products" type="transformation"/>
+      </source_dependencies>
+    </table>
+    
+    <table name="stg_locations">
+      <description>Cleaned and standardized location data</description>
+      <column name="location_id" type="integer" primary_key="true">
+        <description>Unique location identifier</description>
+        <sample>42</sample>
+      </column>
+      <column name="location_name" type="text">
+        <description>Location name</description>
+        <sample>Downtown Jaffle Shop</sample>
+      </column>
+      <column name="tax_rate" type="decimal">
+        <description>Location tax rate</description>
+        <sample>0.08</sample>
+      </column>
+      <column name="opened_date" type="date">
+        <description>When the location opened</description>
+        <sample>2022-01-05</sample>
+      </column>
+      <source_dependencies>
+        <dependency table="raw.raw_stores" type="transformation"/>
+      </source_dependencies>
+    </table>
+    
+    <table name="stg_supplies">
+      <description>Cleaned and standardized supply data</description>
+      <column name="supply_uuid" type="UUID" primary_key="true">
+        <description>Generated unique supply identifier</description>
+        <sample>e7a45b12-d8e8-4e3a-9f0c-5b93c1e4d875</sample>
+      </column>
+      <column name="supply_id" type="integer">
+        <description>Original supply identifier</description>
+        <sample>5001</sample>
+      </column>
+      <column name="product_id" type="text">
+        <description>Product this supply is for</description>
+        <sample>JAFFLE-1001</sample>
+        <references table="stg_products" column="product_id"/>
+      </column>
+      <column name="supply_name" type="text">
+        <description>Supply name</description>
+        <sample>Cheese</sample>
+      </column>
+      <column name="supply_cost" type="decimal">
+        <description>Supply cost in dollars</description>
+        <sample>1.25</sample>
+      </column>
+      <column name="is_perishable_supply" type="boolean">
+        <description>Whether the supply is perishable</description>
+        <sample>true</sample>
+      </column>
+      <source_dependencies>
+        <dependency table="raw.raw_supplies" type="transformation"/>
+      </source_dependencies>
+    </table>
+  </schema>
+  
+  <!-- Mart Layer -->
+  <schema name="marts">
+    <description>Final analytical tables with business logic applied</description>
+    
+    <table name="customers">
+      <description>Customer dimension with order history metrics</description>
+      <column name="customer_id" type="UUID" primary_key="true">
+        <description>Unique customer identifier</description>
+        <sample>f9e82984-3589-4cc2-a1c0-c36d9a1fb06e</sample>
+      </column>
+      <column name="customer_name" type="text">
+        <description>Customer name</description>
+        <sample>John Smith</sample>
+      </column>
+      <column name="count_lifetime_orders" type="integer">
+        <description>Number of orders placed by customer</description>
+        <sample>5</sample>
+      </column>
+      <column name="first_ordered_at" type="date">
+        <description>Date of customer's first order</description>
+        <sample>2023-01-15</sample>
+      </column>
+      <column name="last_ordered_at" type="date">
+        <description>Date of customer's most recent order</description>
+        <sample>2023-05-22</sample>
+      </column>
+      <column name="lifetime_spend_pretax" type="decimal">
+        <description>Customer's total spending before tax</description>
+        <sample>87.45</sample>
+      </column>
+      <column name="lifetime_tax_paid" type="decimal">
+        <description>Customer's total tax paid</description>
+        <sample>6.99</sample>
+      </column>
+      <column name="lifetime_spend" type="decimal">
+        <description>Customer's total spending including tax</description>
+        <sample>94.44</sample>
+      </column>
+      <column name="customer_type" type="text">
+        <description>Customer type (new or returning)</description>
+        <sample>returning</sample>
+      </column>
+      <source_dependencies>
+        <dependency table="staging.stg_customers" type="transformation"/>
+        <dependency table="staging.stg_orders" type="transformation"/>
+        <dependency table="marts.orders" type="transformation"/>
+      </source_dependencies>
+    </table>
+    
+    <table name="orders">
+      <description>Order fact table with enhanced metrics</description>
+      <column name="order_id" type="integer" primary_key="true">
+        <description>Unique order identifier</description>
+        <sample>1001</sample>
+      </column>
+      <column name="customer_id" type="UUID">
+        <description>Customer who placed the order</description>
+        <sample>f9e82984-3589-4cc2-a1c0-c36d9a1fb06e</sample>
+        <references table="customers" column="customer_id"/>
+      </column>
+      <column name="location_id" type="integer">
+        <description>Store where order was placed</description>
+        <sample>42</sample>
+        <references table="locations" column="location_id"/>
+      </column>
+      <column name="ordered_at" type="date">
+        <description>When the order was placed</description>
+        <sample>2023-01-15</sample>
+      </column>
+      <column name="subtotal" type="decimal">
+        <description>Order subtotal</description>
+        <sample>12.99</sample>
+      </column>
+      <column name="tax_paid" type="decimal">
+        <description>Tax amount</description>
+        <sample>1.04</sample>
+      </column>
+      <column name="order_total" type="decimal">
+        <description>Total order amount</description>
+        <sample>14.03</sample>
+      </column>
+      <column name="order_cost" type="decimal">
+        <description>Cost of goods sold</description>
+        <sample>4.25</sample>
+      </column>
+      <column name="order_items_subtotal" type="decimal">
+        <description>Sum of all items in the order</description>
+        <sample>12.99</sample>
+      </column>
+      <column name="count_order_items" type="integer">
+        <description>Number of items in the order</description>
+        <sample>3</sample>
+      </column>
+      <column name="count_food_items" type="integer">
+        <description>Number of food items in the order</description>
+        <sample>2</sample>
+      </column>
+      <column name="count_drink_items" type="integer">
+        <description>Number of drink items in the order</description>
+        <sample>1</sample>
+      </column>
+      <column name="is_food_order" type="boolean">
+        <description>Whether the order contains food items</description>
+        <sample>true</sample>
+      </column>
+      <column name="is_drink_order" type="boolean">
+        <description>Whether the order contains drink items</description>
+        <sample>true</sample>
+      </column>
+      <column name="customer_order_number" type="integer">
+        <description>Sequential order number for this customer</description>
+        <sample>2</sample>
+      </column>
+      <source_dependencies>
+        <dependency table="staging.stg_orders" type="transformation"/>
+        <dependency table="marts.order_items" type="aggregation"/>
+      </source_dependencies>
+    </table>
+    
+    <table name="order_items">
+      <description>Order line items with product information</description>
+      <column name="order_item_id" type="integer" primary_key="true">
+        <description>Unique item identifier</description>
+        <sample>10001</sample>
+      </column>
+      <column name="order_id" type="integer">
+        <description>Order this item belongs to</description>
+        <sample>1001</sample>
+        <references table="orders" column="order_id"/>
+      </column>
+      <column name="product_id" type="text">
+        <description>Product identifier</description>
+        <sample>JAFFLE-1001</sample>
+        <references table="products" column="product_id"/>
+      </column>
+      <column name="ordered_at" type="date">
+        <description>When the item was ordered</description>
+        <sample>2023-01-15</sample>
+      </column>
+      <column name="product_name" type="text">
+        <description>Product name</description>
+        <sample>Classic Jaffle</sample>
+      </column>
+      <column name="product_price" type="decimal">
+        <description>Product price</description>
+        <sample>8.99</sample>
+      </column>
+      <column name="is_food_item" type="boolean">
+        <description>Whether the item is food</description>
+        <sample>true</sample>
+      </column>
+      <column name="is_drink_item" type="boolean">
+        <description>Whether the item is a drink</description>
+        <sample>false</sample>
+      </column>
+      <column name="supply_cost" type="decimal">
+        <description>Cost of supplies for this item</description>
+        <sample>2.00</sample>
+      </column>
+      <source_dependencies>
+        <dependency table="staging.stg_order_items" type="transformation"/>
+        <dependency table="staging.stg_products" type="join"/>
+        <dependency table="staging.stg_orders" type="join"/>
+        <dependency table="staging.stg_supplies" type="aggregation"/>
+      </source_dependencies>
+    </table>
+    
+    <table name="products">
+      <description>Product dimension table</description>
+      <column name="product_id" type="text" primary_key="true">
+        <description>Unique product identifier</description>
+        <sample>JAFFLE-1001</sample>
+      </column>
+      <column name="product_name" type="text">
+        <description>Product name</description>
+        <sample>Classic Jaffle</sample>
+      </column>
+      <column name="product_type" type="text">
+        <description>Product type</description>
+        <sample>jaffle</sample>
+      </column>
+      <column name="product_description" type="text">
+        <description>Product description</description>
+        <sample>Our classic cheese and tomato jaffle</sample>
+      </column>
+      <column name="product_price" type="decimal">
+        <description>Product price</description>
+        <sample>8.99</sample>
+      </column>
+      <column name="is_food_item" type="boolean">
+        <description>Whether the product is food</description>
+        <sample>true</sample>
+      </column>
+      <column name="is_drink_item" type="boolean">
+        <description>Whether the product is a drink</description>
+        <sample>false</sample>
+      </column>
+      <source_dependencies>
+        <dependency table="staging.stg_products" type="passthrough"/>
+      </source_dependencies>
+    </table>
+    
+    <table name="locations">
+      <description>Location dimension table</description>
+      <column name="location_id" type="integer" primary_key="true">
+        <description>Unique location identifier</description>
+        <sample>42</sample>
+      </column>
+      <column name="location_name" type="text">
+        <description>Location name</description>
+        <sample>Downtown Jaffle Shop</sample>
+      </column>
+      <column name="tax_rate" type="decimal">
+        <description>Location tax rate</description>
+        <sample>0.08</sample>
+      </column>
+      <column name="opened_date" type="date">
+        <description>When the location opened</description>
+        <sample>2022-01-05</sample>
+      </column>
+      <source_dependencies>
+        <dependency table="staging.stg_locations" type="passthrough"/>
+      </source_dependencies>
+    </table>
+    
+    <table name="supplies">
+      <description>Supplies dimension table</description>
+      <column name="supply_uuid" type="UUID" primary_key="true">
+        <description>Unique supply identifier</description>
+        <sample>e7a45b12-d8e8-4e3a-9f0c-5b93c1e4d875</sample>
+      </column>
+      <column name="supply_id" type="integer">
+        <description>Original supply identifier</description>
+        <sample>5001</sample>
+      </column>
+      <column name="product_id" type="text">
+        <description>Product this supply is for</description>
+        <sample>JAFFLE-1001</sample>
+        <references table="products" column="product_id"/>
+      </column>
+      <column name="supply_name" type="text">
+        <description>Supply name</description>
+        <sample>Cheese</sample>
+      </column>
+      <column name="supply_cost" type="decimal">
+        <description>Supply cost</description>
+        <sample>1.25</sample>
+      </column>
+      <column name="is_perishable_supply" type="boolean">
+        <description>Whether the supply is perishable</description>
+        <sample>true</sample>
+      </column>
+      <source_dependencies>
+        <dependency table="staging.stg_supplies" type="passthrough"/>
+      </source_dependencies>
+    </table>
+  </schema>
+  
+  <!-- Entity-Relationship Diagram -->
+  <entity_relationships>
+    <relationship type="one-to-many" name="customer_orders">
+      <from table="marts.customers" column="customer_id"/>
+      <to table="marts.orders" column="customer_id"/>
+      <description>A customer can have many orders</description>
+    </relationship>
+    <relationship type="one-to-many" name="location_orders">
+      <from table="marts.locations" column="location_id"/>
+      <to table="marts.orders" column="location_id"/>
+      <description>A location can have many orders</description>
+    </relationship>
+    <relationship type="one-to-many" name="order_items">
+      <from table="marts.orders" column="order_id"/>
+      <to table="marts.order_items" column="order_id"/>
+      <description>An order can have many order items</description>
+    </relationship>
+    <relationship type="one-to-many" name="product_items">
+      <from table="marts.products" column="product_id"/>
+      <to table="marts.order_items" column="product_id"/>
+      <description>A product can be ordered many times</description>
+    </relationship>
+    <relationship type="one-to-many" name="product_supplies">
+      <from table="marts.products" column="product_id"/>
+      <to table="marts.supplies" column="product_id"/>
+      <description>A product can require many supplies</description>
+    </relationship>
+  </entity_relationships>
+  
+  <!-- Data Lineage -->
+  <data_lineage>
+    <transformation name="raw_to_staging">
+      <description>Cleaning and standardizing raw data for the staging layer</description>
+      <steps>
+        <step from="raw.raw_customers" to="staging.stg_customers">
+          <operations>
+            <operation>Rename columns</operation>
+            <operation>Clean and standardize values</operation>
+          </operations>
+        </step>
+        <step from="raw.raw_orders" to="staging.stg_orders">
+          <operations>
+            <operation>Rename columns</operation>
+            <operation>Convert cents to dollars</operation>
+            <operation>Format dates</operation>
+          </operations>
+        </step>
+        <step from="raw.raw_items" to="staging.stg_order_items">
+          <operations>
+            <operation>Rename columns</operation>
+            <operation>Clean and standardize values</operation>
+          </operations>
+        </step>
+        <step from="raw.raw_products" to="staging.stg_products">
+          <operations>
+            <operation>Rename columns</operation>
+            <operation>Convert cents to dollars</operation>
+            <operation>Add derived columns (is_food_item, is_drink_item)</operation>
+          </operations>
+        </step>
+        <step from="raw.raw_stores" to="staging.stg_locations">
+          <operations>
+            <operation>Rename columns</operation>
+            <operation>Format dates</operation>
+          </operations>
+        </step>
+        <step from="raw.raw_supplies" to="staging.stg_supplies">
+          <operations>
+            <operation>Rename columns</operation>
+            <operation>Convert cents to dollars</operation>
+            <operation>Generate UUID for unique identifier</operation>
+          </operations>
+        </step>
+      </steps>
+    </transformation>
+    
+    <transformation name="staging_to_marts">
+      <description>Creating analytical models from staging data</description>
+      <steps>
+        <step from="staging.stg_products" to="marts.products">
+          <operations>
+            <operation>Direct passthrough</operation>
+          </operations>
+        </step>
+        <step from="staging.stg_locations" to="marts.locations">
+          <operations>
+            <operation>Direct passthrough</operation>
+          </operations>
+        </step>
+        <step from="staging.stg_supplies" to="marts.supplies">
+          <operations>
+            <operation>Direct passthrough</operation>
+          </operations>
+        </step>
+        <step from="multiple" to="marts.order_items">
+          <sources>
+            <source>staging.stg_order_items</source>
+            <source>staging.stg_products</source>
+            <source>staging.stg_supplies</source>
+            <source>staging.stg_orders</source>
+          </sources>
+          <operations>
+            <operation>Join tables</operation>
+            <operation>Add derived columns</operation>
+            <operation>Calculate supply cost</operation>
+          </operations>
+        </step>
+        <step from="multiple" to="marts.orders">
+          <sources>
+            <source>staging.stg_orders</source>
+            <source>marts.order_items</source>
+          </sources>
+          <operations>
+            <operation>Join and aggregate order items</operation>
+            <operation>Calculate order metrics</operation>
+            <operation>Add derived columns (is_food_order, is_drink_order)</operation>
+            <operation>Calculate customer order sequence</operation>
+          </operations>
+        </step>
+        <step from="multiple" to="marts.customers">
+          <sources>
+            <source>staging.stg_customers</source>
+            <source>staging.stg_orders</source>
+            <source>marts.orders</source>
+          </sources>
+          <operations>
+            <operation>Join and aggregate orders</operation>
+            <operation>Calculate customer lifetime metrics</operation>
+            <operation>Determine customer type</operation>
+          </operations>
+        </step>
+      </steps>
+    </transformation>
+  </data_lineage>
+</database>

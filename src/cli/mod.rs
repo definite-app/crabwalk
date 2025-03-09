@@ -38,6 +38,14 @@ pub struct Cli {
     #[arg(long)]
     lineage_only: bool,
     
+    /// Generate database schema XML (no SQL execution)
+    #[arg(long)]
+    schema_only: bool,
+    
+    /// Schema XML output file
+    #[arg(long)]
+    schema_file: Option<String>,
+    
     /// Force execution even with dependency issues
     #[arg(short, long)]
     force: bool,
@@ -157,6 +165,13 @@ pub fn run() -> Result<()> {
     if cli.lineage_only {
         println!("Generating lineage diagrams only...");
         crabwalk.generate_lineage()?;
+        return Ok(());
+    }
+    
+    // Check if schema-only mode
+    if cli.schema_only {
+        println!("Generating database schema XML...");
+        crabwalk.generate_schema(cli.schema_file.as_deref())?;
         return Ok(());
     }
     
