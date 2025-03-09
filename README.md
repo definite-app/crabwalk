@@ -106,6 +106,10 @@ SELECT * FROM source_table
 - Python transformations are not yet supported
 - Jinja templating is not supported (environment variables are available)
 
+## Notes
+
+- The "error code: 0" messages in the output are from DuckDB and indicate successful operations. These can be safely ignored.
+
 ## License
 
 MIT License
