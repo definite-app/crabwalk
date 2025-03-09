@@ -11,3 +11,6 @@ duckdb_ast_debug.json
 !examples/simple/output/
 examples/simple/output/*
 !examples/simple/output/.gitkeep
+
+# Ignore tmp directories
+**/tmp/

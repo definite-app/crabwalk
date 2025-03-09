@@ -22,6 +22,7 @@ thiserror = "1.0"
 serde = { version = "1.0", features = ["derive"] }
 serde_yaml = "0.9"
 serde_json = "1.0"
+base64 = "0.21"
 # Logging
 tracing = "0.1"
 tracing-subscriber = { version = "0.3", features = ["env-filter"] }
@@ -43,6 +44,8 @@ rusoto_core = { version = "0.48", optional = true }
 rusoto_s3 = { version = "0.48", optional = true }
 # System bindings for handling error output
 libc = "0.2"
+# Compression for Mermaid diagrams
+flate2 = "1.0"
 
 [features]
 default = []

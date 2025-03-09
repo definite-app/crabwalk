@@ -43,6 +43,8 @@ cargo run
 
 # Examine the output lineage diagram
 cat examples/simple/lineage.mmd
+
+# Or view the lineage diagram in Mermaid Live Editor via the URL provided in the output
 ```
 
 The example processes these files:
@@ -56,7 +58,7 @@ This example demonstrates several key features:
 2. Model-level configuration through SQL comments
 3. Support for both tables and views
 4. Parquet file output
-5. Lineage diagram generation
+5. Lineage diagram generation with Mermaid Live Editor integration
 
 ### Basic Usage
 
@@ -105,6 +107,33 @@ SELECT * FROM source_table
 - Only DuckDB is supported as the backend/dialect
 - Python transformations are not yet supported
 - Jinja templating is not supported (environment variables are available)
+
+## Lineage Diagrams
+
+Crabwalk automatically generates lineage diagrams to visualize dependencies between your SQL models:
+
+```bash
+# Generate lineage diagram for SQL files in a directory
+crabwalk lineage ./sql_folder
+```
+
+This creates:
+1. A `lineage.mmd` file in the specified directory containing the Mermaid diagram definition
+2. A Mermaid Live Editor URL that allows you to view and edit the diagram in your browser
+
+Example diagram:
+```
+graph TD
+    customer_orders
+    stg_orders
+    stg_customers
+    order_summary
+    stg_orders --> customer_orders
+    stg_customers --> customer_orders
+    stg_orders --> order_summary
+```
+
+The generated URL uses proper compression and encoding to ensure it works correctly with the Mermaid Live Editor.
 
 ## Notes
 
