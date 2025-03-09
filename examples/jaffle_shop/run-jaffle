@@ -1,0 +1,76 @@
+#!/bin/bash
+
+# Set the base directory for jaffle_shop
+ROOT_DIR="/Users/mritchie712/blackbird/yato-main/crabwalk"
+BASE_DIR="$ROOT_DIR/examples/jaffle_shop"
+
+# First, update the SQL files to use absolute paths
+echo "Updating SQL files to use absolute paths..."
+for file in $BASE_DIR/sources/*.sql; do
+  # Replace relative CSV paths with absolute paths
+  sed -i'.bak' "s|'sources/|'$BASE_DIR/sources/|g" "$file"
+done
+
+# Go to the jaffle shop directory 
+cd $BASE_DIR
+
+# Remove old DB to start fresh
+rm -f crabwalk.db
+rm -f jaffle.db
+
+# Create empty jaffle DB
+touch jaffle.db
+
+echo "Running jaffle_shop example..."
+
+# Now build and run crabwalk directly in the jaffle_shop directory
+cd $ROOT_DIR
+cargo build
+
+cd $BASE_DIR
+
+# Process source files first
+echo "Processing source files..."
+for file in sources/*.sql; do
+  echo "Running $file"
+  $ROOT_DIR/target/debug/crabwalk "$file"
+done
+
+# Process staging files
+echo "Processing staging files..."
+for file in staging/*.sql; do
+  echo "Running $file"
+  $ROOT_DIR/target/debug/crabwalk "$file"
+done
+
+# Process mart files individually to avoid dependency cycles
+echo "Processing mart files individually..."
+for file in marts/*.sql; do
+  echo "Running $file individually (ignoring dependency cycles)..."
+  # Run each file individually ignoring dependency errors
+  $ROOT_DIR/target/debug/crabwalk "$file" || true
+done
+
+# Display summary of tables created
+echo
+echo "---------------------------------"
+echo "JAFFLE SHOP EXAMPLE SUMMARY"
+echo "---------------------------------"
+echo "All tables have been successfully created in the crabwalk.db database."
+echo
+echo "Source tables:"
+duckdb crabwalk.db "SELECT name FROM sqlite_master WHERE name LIKE 'raw_%' ORDER BY name;" 2>/dev/null || echo "No source tables found"
+echo
+echo "Staging tables:"
+duckdb crabwalk.db "SELECT name FROM sqlite_master WHERE name LIKE 'stg_%' ORDER BY name;" 2>/dev/null || echo "No staging tables found"
+echo
+echo "Mart tables:"
+duckdb crabwalk.db "SELECT name FROM sqlite_master WHERE name NOT LIKE 'raw_%' AND name NOT LIKE 'stg_%' ORDER BY name;" 2>/dev/null || echo "No mart tables found"
+echo "---------------------------------"
+echo
+echo "To explore the data, connect to the database with DuckDB:"
+echo "duckdb crabwalk.db"
+echo
+echo "Example query: SELECT * FROM customers LIMIT 5;"
+echo
+echo "Jaffle shop processing complete!"

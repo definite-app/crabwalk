@@ -1,0 +1,8 @@
+{
+  "project_name": "jaffle_shop",
+  "base_dir": "/Users/mritchie712/blackbird/yato-main/crabwalk/examples/jaffle_shop",
+  "output": {
+    "type": "table",
+    "keep_table": true
+  }
+}

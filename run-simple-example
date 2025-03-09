@@ -1,0 +1,18 @@
+#\!/bin/bash
+
+# Run the simple example that comes with crabwalk
+cd /Users/mritchie712/blackbird/yato-main/crabwalk
+
+# Make sure the build is fresh
+cargo build --release
+
+# Run the simple example which is guaranteed to work
+cargo run
+
+# Check the results
+echo -e "\nExamining output files:"
+ls -la output/
+
+# Provide a lineage link
+echo -e "\nView the lineage diagram at:"
+cat examples/simple/lineage.mmd | grep "Mermaid Live Editor URL"

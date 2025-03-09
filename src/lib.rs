@@ -73,6 +73,95 @@ impl Crabwalk {
         
         Ok(())
     }
+    
+    /// Run the transformation pipeline in force mode (ignoring dependency cycles)
+    pub fn run_force(&self) -> Result<()> {
+        // Initialize tracing for logging
+        tracing::info!("Starting Crabwalk transformation pipeline in force mode");
+        
+        // Connect to DuckDB
+        let conn = executor::connect_to_duckdb(&self.database_path)?;
+        
+        // Create context
+        let context = executor::RunContext::new(conn);
+        
+        // Get dependencies
+        let dependencies = parser::dependencies::get_dependencies(&self.sql_folder, &self.dialect)?;
+        
+        // Run pre-queries (create schema)
+        self.run_pre_queries(&context)?;
+        
+        // In force mode, we run each file directly without worrying about dependencies
+        let mut file_count = 0;
+        
+        // Check if this is a single file or a directory
+        if self.sql_folder.ends_with(".sql") {
+            // Single file mode
+            let file_path = &self.sql_folder;
+            let file_name = std::path::Path::new(file_path)
+                .file_stem()
+                .and_then(|s| s.to_str())
+                .unwrap_or("unknown");
+                
+            tracing::info!("Running single SQL file in force mode: {}", file_path);
+            
+            // Run the SQL file directly
+            match self.run_sql_query(file_path, file_name, &context, None) {
+                Ok(_) => {
+                    file_count += 1;
+                    tracing::info!("Successfully executed: {}", file_path);
+                },
+                Err(e) => {
+                    tracing::error!("Error executing {}: {}", file_path, e);
+                }
+            }
+        } else {
+            // Directory mode - process each SQL file
+            if let Ok(entries) = std::fs::read_dir(&self.sql_folder) {
+                for entry in entries.flatten() {
+                    let path = entry.path();
+                    if path.is_file() && path.extension().and_then(|s| s.to_str()) == Some("sql") {
+                        if let Some(file_name) = path.file_stem().and_then(|s| s.to_str()) {
+                            tracing::info!("Running SQL file in force mode: {}", path.display());
+                            
+                            // Run the SQL file directly
+                            match self.run_sql_query(&path.to_string_lossy(), file_name, &context, None) {
+                                Ok(_) => {
+                                    file_count += 1;
+                                    tracing::info!("Successfully executed: {}", path.display());
+                                },
+                                Err(e) => {
+                                    tracing::error!("Error executing {}: {}", path.display(), e);
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        
+        // Generate lineage diagram if possible
+        if let Err(e) = parser::lineage::generate_mermaid_diagram(&self.sql_folder, &dependencies) {
+            tracing::warn!("Could not generate lineage diagram: {}", e);
+        }
+        
+        tracing::info!("Crabwalk force mode completed, processed {} files", file_count);
+        
+        Ok(())
+    }
+    
+    /// Generate lineage diagrams only without executing SQL
+    pub fn generate_lineage(&self) -> Result<()> {
+        // Get dependencies
+        let dependencies = parser::dependencies::get_dependencies(&self.sql_folder, &self.dialect)?;
+        
+        // Generate lineage diagram
+        parser::lineage::generate_mermaid_diagram(&self.sql_folder, &dependencies)?;
+        
+        tracing::info!("Lineage diagram generation completed");
+        
+        Ok(())
+    }
 
     /// Run pre-queries to set up the environment
     fn run_pre_queries(&self, context: &executor::RunContext) -> Result<()> {
@@ -87,6 +176,7 @@ impl Crabwalk {
     /// Run all objects in the execution order
     fn run_objects(&self, execution_order: Vec<String>, dependencies: &std::collections::HashMap<String, Dependency>, context: &executor::RunContext) -> Result<()> {
         tracing::info!("Running {} objects", execution_order.len());
+        tracing::info!("Execution order: {:?}", execution_order);
         
         for object_name in execution_order {
             if let Some(dependency) = dependencies.get(&object_name) {

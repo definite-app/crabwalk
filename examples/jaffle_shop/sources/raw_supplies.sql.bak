@@ -1,0 +1,2 @@
+SELECT *
+FROM read_csv('sources/raw_supplies.csv')

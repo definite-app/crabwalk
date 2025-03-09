@@ -33,23 +33,39 @@ pub struct Dependency {
 pub fn get_dependencies(folder: &str, dialect: &str) -> Result<HashMap<String, Dependency>> {
     let mut dependencies = HashMap::new();
     
-    for entry in WalkDir::new(folder).follow_links(true).into_iter().filter_map(|e| e.ok()) {
+    tracing::info!("Looking for SQL files in folder: {}", folder);
+    
+    let walker = WalkDir::new(folder).follow_links(true);
+    let files: Vec<_> = walker.into_iter().filter_map(|e| e.ok()).collect();
+    
+    tracing::info!("Found {} entries in folder", files.len());
+    
+    for entry in files {
         let path = entry.path();
+        tracing::info!("Examining entry: {}", path.display());
         
         if path.is_file() {
             if let Some(extension) = path.extension() {
                 let extension_str = extension.to_string_lossy().to_lowercase();
+                tracing::info!("Entry is a file with extension: {}", extension_str);
                 
                 if extension_str == "sql" {
+                    tracing::info!("Processing SQL file: {}", path.display());
                     process_sql_file(path, dialect, &mut dependencies)?;
                 } else if extension_str == "py" {
                     // Python support would be handled here
                     // For now, we'll skip Python files
                     tracing::info!("Python support not yet implemented, skipping: {}", path.display());
                 }
+            } else {
+                tracing::info!("File has no extension: {}", path.display());
             }
+        } else {
+            tracing::info!("Entry is not a file: {}", path.display());
         }
     }
+    
+    tracing::info!("Dependency processing complete, found {} models", dependencies.len());
     
     Ok(dependencies)
 }
@@ -71,12 +87,26 @@ fn process_sql_file(path: &Path, dialect: &str, dependencies: &mut HashMap<Strin
     
     // Parse SQL and extract tables
     let mut deps = HashSet::new();
-    for statement in parse_sql(&sql, dialect)? {
-        deps.extend(extract_tables(&statement));
+    let statements = parse_sql(&sql, dialect)?;
+    
+    // Log the number of statements parsed
+    tracing::info!("Parsed {} statements from file: {}", statements.len(), path.display());
+    
+    for statement in statements {
+        // Log the statement type
+        tracing::info!("Processing statement: {:?}", statement);
+        
+        // Extract tables and add to deps
+        let tables = extract_tables(&statement);
+        tracing::info!("Extracted tables: {:?}", tables);
+        
+        deps.extend(tables);
     }
     
     // Remove self-dependencies (CTE references)
     deps.remove(&model_name);
+    
+    tracing::info!("Final dependencies for {}: {:?}", model_name, deps);
     
     // Add dependency to the map
     dependencies.insert(model_name, Dependency {
@@ -110,14 +140,25 @@ pub fn get_execution_order(dependencies: &HashMap<String, Dependency>) -> Result
     
     // Add edges for dependencies
     for (name, dependency) in dependencies {
+        tracing::info!("Processing edges for model '{}'", name);
         let from_idx = *node_map.get(name).context("Node not found in graph")?;
         
         for dep in &dependency.deps {
+            tracing::info!("Checking dependency: '{}' -> '{}'", dep, name);
             // If the dependency exists in our models, add an edge
             if let Some(to_idx) = node_map.get(dep) {
+                tracing::info!("Adding edge: '{}' -> '{}'", dep, name);
                 graph.add_edge(*to_idx, from_idx, ());
+            } else {
+                tracing::info!("Skipping edge for external dependency: '{}'", dep);
             }
         }
+    }
+    
+    // Log graph structure for debugging
+    tracing::info!("Dependency graph structure before sorting:");
+    for (name, dependency) in dependencies {
+        tracing::info!("Model '{}' depends on: {:?}", name, dependency.deps);
     }
     
     // Perform topological sort
@@ -130,6 +171,9 @@ pub fn get_execution_order(dependencies: &HashMap<String, Dependency>) -> Result
     let execution_order = sorted.into_iter()
         .map(|idx| graph[idx].clone())
         .collect();
+    
+    // Log the final execution order
+    tracing::info!("Final execution order after topological sort: {:?}", execution_order);
     
     Ok(execution_order)
 }
