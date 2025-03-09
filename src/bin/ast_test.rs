@@ -1,8 +1,13 @@
 use anyhow::Result;
+use tracing_subscriber::EnvFilter;
 
 fn main() -> Result<()> {
-    // Initialize default tracing
-    tracing_subscriber::fmt::init();
+    // Initialize tracing with filter to hide DuckDB success messages
+    tracing_subscriber::fmt()
+        .with_env_filter(
+            EnvFilter::new("info,duckdb=error")
+        )
+        .init();
     
     // Get the SQL file from command-line arguments
     let args: Vec<String> = std::env::args().collect();

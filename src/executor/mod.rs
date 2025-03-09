@@ -48,11 +48,36 @@ impl RunContext {
         // Replace environment variables
         let sql_with_env = replace_env_vars(sql)?;
         
-        // Execute the SQL
-        self.conn.execute(&sql_with_env, [])
-            .context(format!("Failed to execute SQL: {}", sql_with_env))?;
+        // Execute the SQL without displaying the "error code: 0" messages
+        let result = std::panic::catch_unwind(|| {
+            // Temporarily redirect stderr to suppress DuckDB's "error code: 0" messages
+            let old_stderr = unsafe { libc::dup(libc::STDERR_FILENO) };
+            let dev_null = unsafe { libc::open("/dev/null\0".as_ptr() as *const i8, libc::O_WRONLY) };
+            unsafe { libc::dup2(dev_null, libc::STDERR_FILENO) };
+            
+            // Execute the SQL
+            let exec_result = self.conn.execute(&sql_with_env, []);
+            
+            // Restore stderr
+            unsafe {
+                libc::dup2(old_stderr, libc::STDERR_FILENO);
+                libc::close(old_stderr);
+                libc::close(dev_null);
+            }
+            
+            exec_result
+        });
         
-        Ok(())
+        // Check if the panic occurred
+        match result {
+            Ok(exec_result) => {
+                exec_result.context(format!("Failed to execute SQL: {}", sql_with_env))?;
+                Ok(())
+            },
+            Err(_) => {
+                Err(anyhow::anyhow!("SQL execution panicked: {}", sql_with_env))
+            }
+        }
     }
     
     /// Get the DuckDB connection
