@@ -39,7 +39,9 @@ git clone https://github.com/definite-app/crabwalk.git
 cd crabwalk
 
 # Build and run the example
-cargo run
+cargo run    # Will use the default-run binary (crabwalk)
+# Or specify the binary explicitly
+# cargo run --bin crabwalk
 
 # Examine the output lineage diagram
 cat examples/simple/lineage.mmd

@@ -5,6 +5,7 @@ edition = "2021"
 description = "A SQL transformation orchestrator written in Rust"
 authors = ["Crabwalk Contributors"]
 license = "MIT"
+default-run = "crabwalk"
 
 [dependencies]
 # Command line argument parsing
