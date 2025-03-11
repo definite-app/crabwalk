@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Perspective CDN Test</title>
+  
+  <style>
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      margin: 0;
+      padding: 20px;
+      background-color: #f5f5f5;
+    }
+    
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+      background-color: white;
+      padding: 20px;
+      border-radius: 8px;
+      box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+    }
+    
+    h1 {
+      color: #333;
+      margin-top: 0;
+    }
+    
+    .status {
+      margin: 10px 0;
+      padding: 10px;
+      border-radius: 4px;
+    }
+    
+    .status.success {
+      background-color: #e6f7e6;
+      color: #2e7d32;
+    }
+    
+    .status.error {
+      background-color: #ffebee;
+      color: #c62828;
+    }
+    
+    .status.loading {
+      background-color: #e3f2fd;
+      color: #1565c0;
+    }
+    
+    #viewer-container {
+      margin-top: 20px;
+      border: 1px solid #ccc;
+      padding: 10px;
+      height: 500px;
+      width: 100%;
+    }
+    
+    perspective-viewer {
+      width: 100%;
+      height: 100%;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>Perspective CDN Test</h1>
+    
+    <div id="status-container">
+      <div id="status" class="status loading">Loading Perspective from CDN...</div>
+    </div>
+    
+    <div id="viewer-container">
+      <perspective-viewer id="viewer"></perspective-viewer>
+    </div>
+  </div>
+  
+  <script type="module">
+    // Update status
+    const statusEl = document.getElementById('status');
+    
+    function updateStatus(message, type = 'loading') {
+      statusEl.textContent = message;
+      statusEl.className = `status ${type}`;
+    }
+    
+    // Handle errors
+    function handleError(err) {
+      console.error('Perspective test failed:', err);
+      updateStatus(`Error: ${err.message || err}`, 'error');
+    }
+    
+    async function runTest() {
+      try {
+        updateStatus('Loading Perspective from CDN...');
+        
+        // Import Perspective modules from CDN
+        const perspective = await import("https://cdn.jsdelivr.net/npm/@finos/perspective/dist/cdn/perspective.js")
+          .then(module => module.default);
+          
+        await import("https://cdn.jsdelivr.net/npm/@finos/perspective-viewer/dist/cdn/perspective-viewer.js");
+        await import("https://cdn.jsdelivr.net/npm/@finos/perspective-viewer-datagrid/dist/cdn/perspective-viewer-datagrid.js");
+        await import("https://cdn.jsdelivr.net/npm/@finos/perspective-viewer-d3fc/dist/cdn/perspective-viewer-d3fc.js");
+        
+        updateStatus('Perspective loaded successfully', 'success');
+        
+        // Initialize worker
+        updateStatus('Initializing worker...', 'loading');
+        const worker = await perspective.worker();
+        
+        // Fetch sample data
+        updateStatus('Fetching sample data...', 'loading');
+        const WASM_URL = "https://cdn.jsdelivr.net/npm/superstore-arrow/superstore.lz4.arrow";
+        
+        const table = await fetch(WASM_URL)
+          .then((x) => x.arrayBuffer())
+          .then((x) => worker.table(x));
+        
+        updateStatus('Data loaded successfully', 'success');
+        
+        // Load into viewer
+        const viewer = document.getElementById('viewer');
+        await viewer.load(table);
+        
+        updateStatus('Perspective visualization ready!', 'success');
+      } catch (err) {
+        handleError(err);
+      }
+    }
+    
+    // Start the test when page loads
+    document.addEventListener('DOMContentLoaded', runTest);
+  </script>
+</body>
+</html> 

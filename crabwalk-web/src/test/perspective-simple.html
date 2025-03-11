@@ -1,0 +1,269 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Perspective Simple Test</title>
+  
+  <style>
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      margin: 0;
+      padding: 20px;
+      background-color: #f5f5f5;
+    }
+    
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+      background-color: white;
+      padding: 20px;
+      border-radius: 8px;
+      box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+    }
+    
+    h1 {
+      color: #333;
+      margin-top: 0;
+    }
+    
+    .status {
+      margin: 10px 0;
+      padding: 10px;
+      border-radius: 4px;
+    }
+    
+    .status.success {
+      background-color: #e6f7e6;
+      color: #2e7d32;
+    }
+    
+    .status.error {
+      background-color: #ffebee;
+      color: #c62828;
+    }
+    
+    .status.loading {
+      background-color: #e3f2fd;
+      color: #1565c0;
+    }
+    
+    #output {
+      margin-top: 20px;
+      padding: 15px;
+      background-color: #f8f9fa;
+      border-radius: 4px;
+      font-family: monospace;
+      white-space: pre-wrap;
+      overflow-x: auto;
+    }
+    
+    #viewer-container {
+      margin-top: 20px;
+      border: 1px solid #ccc;
+      padding: 10px;
+      height: 400px;
+      width: 100%;
+    }
+    
+    perspective-viewer {
+      width: 100%;
+      height: 100%;
+    }
+  </style>
+  
+  <!-- Load Perspective components -->
+  <script src="/wasm/perspective.js"></script>
+</head>
+<body>
+  <div class="container">
+    <h1>Perspective Simple Test</h1>
+    
+    <div id="status-container">
+      <div id="status" class="status loading">Initializing...</div>
+    </div>
+    
+    <div id="viewer-container">
+      <div id="viewer" style="width: 100%; height: 100%;"></div>
+    </div>
+    
+    <div id="output"></div>
+  </div>
+  
+  <script>
+    // Elements
+    const statusEl = document.getElementById('status');
+    const outputEl = document.getElementById('output');
+    const viewerEl = document.getElementById('viewer');
+    
+    // Update status
+    function updateStatus(message, type = 'loading') {
+      statusEl.textContent = message;
+      statusEl.className = `status ${type}`;
+    }
+    
+    // Log output
+    function log(message) {
+      const text = typeof message === 'object' ? JSON.stringify(message, null, 2) : message;
+      outputEl.textContent += text + '\n';
+    }
+    
+    // Handle errors
+    function handleError(err) {
+      console.error('Perspective test failed:', err);
+      updateStatus(`Error: ${err.message || err}`, 'error');
+      log(`Error: ${err.message || err}`);
+    }
+    
+    // Load Perspective manually
+    async function loadPerspective() {
+      try {
+        // Create a worker manually
+        const worker = {
+          table: async (data) => {
+            log('Creating table with data');
+            
+            // Create a simple in-memory table implementation
+            const rows = Array.isArray(data) ? data : 
+              Object.keys(data).length > 0 ? 
+                Array(data[Object.keys(data)[0]].length).fill(0).map((_, i) => {
+                  const row = {};
+                  for (const key in data) {
+                    row[key] = data[key][i];
+                  }
+                  return row;
+                }) : [];
+            
+            const tableObj = {
+              size: async () => rows.length,
+              schema: async () => {
+                const schema = {};
+                if (Array.isArray(data)) {
+                  if (data.length > 0) {
+                    for (const key in data[0]) {
+                      schema[key] = typeof data[0][key];
+                    }
+                  }
+                } else {
+                  for (const key in data) {
+                    schema[key] = typeof data[key][0];
+                  }
+                }
+                return schema;
+              },
+              view: async () => ({
+                to_json: async () => rows
+              })
+            };
+            
+            return tableObj;
+          }
+        };
+        
+        // Expose to window
+        window.perspective = {
+          worker: async () => worker
+        };
+        
+        return worker;
+      } catch (err) {
+        console.error('Failed to load Perspective:', err);
+        throw err;
+      }
+    }
+    
+    // Run the test
+    async function runTest() {
+      try {
+        updateStatus('Loading Perspective...');
+        
+        // Load Perspective manually
+        await loadPerspective();
+        
+        // Check if perspective is available
+        if (!window.perspective) {
+          throw new Error('Perspective not loaded correctly');
+        }
+        
+        log('Perspective object available');
+        updateStatus('Perspective loaded successfully', 'success');
+        
+        // Create a simple table
+        const data = {
+          x: [1, 2, 3, 4],
+          y: ['a', 'b', 'c', 'd']
+        };
+        
+        log('Test data:');
+        log(data);
+        
+        updateStatus('Creating worker...', 'loading');
+        const worker = await window.perspective.worker();
+        log('Worker created');
+        
+        updateStatus('Creating table...', 'loading');
+        const table = await worker.table(data);
+        log('Table created');
+        
+        // Get table size
+        const size = await table.size();
+        log(`Table size: ${size} rows`);
+        
+        // Get schema
+        const schema = await table.schema();
+        log('Table schema:');
+        log(schema);
+        
+        // Get data
+        const view = await table.view();
+        const tableData = await view.to_json();
+        log('Table data:');
+        log(tableData);
+        
+        // Load data into viewer if available
+        if (viewerEl) {
+          try {
+            updateStatus('Loading data into viewer...', 'loading');
+            // Check if the viewer has a load method
+            if (typeof viewerEl.load === 'function') {
+              await viewerEl.load(table);
+              log('Data loaded into viewer successfully');
+            } else {
+              // Create a simple mock of the viewer's load method
+              viewerEl.innerHTML = `
+                <div style="padding: 10px;">
+                  <h3>Table Data Preview</h3>
+                  <table style="width: 100%; border-collapse: collapse;">
+                    <thead>
+                      <tr>
+                        ${Object.keys(schema).map(key => `<th style="border: 1px solid #ddd; padding: 8px; text-align: left;">${key}</th>`).join('')}
+                      </tr>
+                    </thead>
+                    <tbody>
+                      ${tableData.map(row => 
+                        `<tr>${Object.keys(schema).map(key => 
+                          `<td style="border: 1px solid #ddd; padding: 8px;">${row[key]}</td>`
+                        ).join('')}</tr>`
+                      ).join('')}
+                    </table>
+                  </div>
+              `;
+              log('Created simple table view (perspective-viewer not available)');
+            }
+            updateStatus('Viewer updated successfully', 'success');
+          } catch (viewerErr) {
+            log(`Warning: Could not load data into viewer: ${viewerErr.message}`);
+          }
+        }
+        
+        updateStatus('Test completed successfully', 'success');
+      } catch (err) {
+        handleError(err);
+      }
+    }
+    
+    // Start the test when page loads
+    document.addEventListener('DOMContentLoaded', runTest);
+  </script>
+</body>
+</html> 

@@ -1,0 +1,55 @@
+{
+  "name": "crabwalk-web",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "bin": {
+    "crabwalk-web": "./bin/crabwalk-web.js"
+  },
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc -b && vite build && tsc -p tsconfig.server.json",
+    "lint": "eslint .",
+    "preview": "vite preview",
+    "server": "node dist/server/index.js",
+    "start": "npm run build && npm run server",
+    "test:mermaid": "vite --open src/test/test.html",
+    "test:perspective": "vite --open src/test/perspective-test.html",
+    "test:perspective:fixed": "vite --open src/test/perspective-test-fixed.html",
+    "test:perspective:direct": "vite --open src/test/perspective-direct.html",
+    "test:perspective:simple": "vite --open src/test/perspective-simple.html",
+    "setup-wasm": "node scripts/setup-wasm.js"
+  },
+  "dependencies": {
+    "@duckdb/duckdb-wasm": "^1.29.0",
+    "@finos/perspective": "^3.4.0",
+    "@finos/perspective-viewer": "^3.4.0",
+    "@finos/perspective-viewer-d3fc": "^3.4.0",
+    "@finos/perspective-viewer-datagrid": "^3.4.0",
+    "express": "^4.19.2",
+    "mermaid": "^11.4.1",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0",
+    "sql.js": "^1.12.0"
+  },
+  "devDependencies": {
+    "@eslint/js": "^9.21.0",
+    "@tailwindcss/postcss": "^4.0.12",
+    "@types/express": "^4.17.21",
+    "@types/node": "^20.11.30",
+    "@types/react": "^19.0.10",
+    "@types/react-dom": "^19.0.4",
+    "@types/sql.js": "^1.4.9",
+    "@vitejs/plugin-react": "^4.3.4",
+    "autoprefixer": "^10.4.21",
+    "eslint": "^9.21.0",
+    "eslint-plugin-react-hooks": "^5.1.0",
+    "eslint-plugin-react-refresh": "^0.4.19",
+    "globals": "^15.15.0",
+    "postcss": "^8.5.3",
+    "ts-node": "^10.9.2",
+    "typescript": "~5.7.2",
+    "typescript-eslint": "^8.24.1",
+    "vite": "^6.2.0"
+  }
+}

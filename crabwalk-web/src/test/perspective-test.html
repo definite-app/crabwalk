@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Perspective WebAssembly Test</title>
+  <!-- Configure the browser for WebAssembly -->
+  <script>
+    // These headers help with WebAssembly isolation
+    if (window.crossOriginIsolated === undefined || window.crossOriginIsolated === false) {
+      console.warn("Cross-Origin-Isolation is not enabled. This may affect WebAssembly performance.");
+    }
+    
+    // Configure Perspective WebAssembly paths
+    window.__WASM_PATH__ = '/wasm/';
+    window.PERSPECTIVE_VERSION = 'custom';
+    window.PERSPECTIVE_ASSETS = {
+      client: '/wasm/perspective-client.wasm',
+      worker: '/wasm/perspective-js.wasm',
+      wasm: '/wasm/perspective-js.wasm'
+    };
+    
+    // Function to preload WebAssembly - this creates fetch requests early
+    function preloadWasmFiles() {
+      const wasmFiles = [
+        '/wasm/perspective-js.wasm',
+        '/wasm/perspective-client.wasm',
+        '/wasm/perspective-viewer.wasm',
+        '/wasm/perspective.wasm',
+        '/wasm/perspective-server.wasm'
+      ];
+      
+      // Create fetch requests for each file
+      wasmFiles.forEach(file => {
+        try {
+          const preloadLink = document.createElement('link');
+          preloadLink.href = file;
+          preloadLink.rel = 'preload';
+          preloadLink.as = 'fetch';
+          preloadLink.crossOrigin = 'anonymous';
+          document.head.appendChild(preloadLink);
+          
+          // Also start the actual fetch
+          fetch(file).catch(e => console.warn(`Preload fetch for ${file} failed:`, e));
+        } catch (e) {
+          console.warn(`Failed to preload ${file}:`, e);
+        }
+      });
+    }
+    
+    // Start preloading
+    preloadWasmFiles();
+  </script>
+</head>
+<body>
+  <div id="root"></div>
+  <script type="module">
+    import { createRoot } from 'react-dom/client';
+    import React from 'react';
+    import PerspectiveTest from './PerspectiveTest';
+    
+    const root = createRoot(document.getElementById('root'));
+    root.render(React.createElement(PerspectiveTest));
+  </script>
+</body>
+</html>
