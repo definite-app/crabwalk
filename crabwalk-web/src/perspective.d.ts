@@ -1,6 +1,5 @@
-/// <reference types="vite/client" />
+import * as React from 'react';
 
-// Custom elements for Perspective
 declare global {
   namespace JSX {
     interface IntrinsicElements {

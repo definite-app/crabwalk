@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { listTables, loadDatabaseFile, TableInfo } from '../utils/duckdb';
+import { listTables, TableInfo } from '../utils/duckdb';
 import TableViewer from './TableViewer';
 
 interface DatabaseExplorerProps {
@@ -109,12 +109,8 @@ const DatabaseExplorer: React.FC<DatabaseExplorerProps> = ({ className }) => {
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
   const [selectedTable, setSelectedTable] = useState<string | null>(null);
-  const [refreshCounter, setRefreshCounter] = useState<number>(0);
-  
-  // Function to trigger a refresh of the table list
-  const refreshTables = () => {
-    setRefreshCounter(prev => prev + 1);
-  };
+  // Using just refreshCounter for the dependency array in useEffect
+  const [refreshCounter] = useState<number>(0);
   
   // Load the list of tables
   useEffect(() => {
