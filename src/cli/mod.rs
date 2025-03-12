@@ -27,7 +27,7 @@ pub struct Cli {
     output: OutputType,
 
     /// Output directory for exports
-    #[arg(short, long)]
+    #[arg(long)]
     output_dir: Option<String>,
 
     /// Keep temporary tables when generating files
@@ -80,6 +80,36 @@ enum Command {
         /// Output format for LLM instructions (markdown or json)
         #[arg(short, long, default_value = "markdown")]
         format: String,
+    },
+    
+    /// Generate schema visualization
+    Visualize {
+        /// SQL file or directory to process
+        #[arg(help = "SQL file or directory to process")]
+        path: Option<String>,
+        
+        /// Visualization format (html, svg, png)
+        #[arg(short, long, default_value = "html")]
+        format: String,
+        
+        /// Output file path
+        #[arg(short = 'O', long)]
+        output: Option<String>,
+        
+        /// Include column-level lineage in visualization
+        #[arg(long)]
+        columns: bool,
+    },
+    
+    /// Launch the web application for visualizing Crabwalk projects
+    App {
+        /// Port to use for the web server
+        #[arg(short, long, default_value = "3000")]
+        port: u16,
+        
+        /// Open the browser automatically
+        #[arg(short, long)]
+        open: bool,
     },
 }
 
@@ -137,6 +167,128 @@ pub fn run() -> Result<()> {
             Command::Init { format } => {
                 print_llm_instructions(&format);
                 return Ok(());
+            },
+            Command::Visualize { path, format, output, columns } => {
+                // Get SQL path or use default
+                let sql_path = path.unwrap_or_else(|| "./examples/simple".to_string());
+                
+                // Create Crabwalk instance
+                let crabwalk = crate::Crabwalk::new(
+                    "crabwalk.db".to_string(),
+                    sql_path,
+                    "duckdb".to_string(),
+                    "transform".to_string(),
+                    None,
+                    None,
+                );
+                
+                // Generate schema visualization
+                println!("Generating schema visualization...");
+                crabwalk.visualize_schema(&format, output.as_deref(), columns)?;
+                println!("Visualization completed successfully!");
+                return Ok(());
+            },
+            Command::App { port, open } => {
+                // Launch the web application
+                println!("Starting Crabwalk Web Visualizer on port {}", port);
+                
+                // Check if the web application exists
+                let web_app_dir = std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("crabwalk-web");
+                
+                if !web_app_dir.exists() {
+                    println!("Error: Could not find the web application directory at {}", web_app_dir.display());
+                    println!("Please make sure the crabwalk-web directory exists and is properly set up.");
+                    return Err(anyhow::anyhow!("Web application directory not found"));
+                }
+                
+                // Check if npm is installed
+                println!("Checking for npm installation...");
+                match std::process::Command::new("npm").arg("--version").output() {
+                    Ok(_) => println!("npm is installed, continuing..."),
+                    Err(_) => {
+                        println!("Error: npm not found. Please install Node.js and npm to use the web application.");
+                        return Err(anyhow::anyhow!("npm not found"));
+                    }
+                }
+                
+                // Install dependencies if node_modules doesn't exist
+                let node_modules = web_app_dir.join("node_modules");
+                if !node_modules.exists() {
+                    println!("Installing dependencies...");
+                    let npm_install = std::process::Command::new("npm")
+                        .current_dir(&web_app_dir)
+                        .arg("install")
+                        .status();
+                    
+                    match npm_install {
+                        Ok(status) if status.success() => println!("Dependencies installed successfully"),
+                        Ok(_) => {
+                            println!("Error: Failed to install dependencies");
+                            return Err(anyhow::anyhow!("Failed to install dependencies"));
+                        },
+                        Err(e) => {
+                            println!("Error: Failed to run npm install: {}", e);
+                            return Err(anyhow::anyhow!("Failed to run npm install: {}", e));
+                        }
+                    }
+                }
+                
+                // Start the development server with the specified port
+                println!("Starting the development server...");
+                let dev_command = format!("vite --port {}", port);
+                let npm_run = std::process::Command::new("npm")
+                    .current_dir(&web_app_dir)
+                    .arg("exec")
+                    .arg("--")
+                    .args(dev_command.split_whitespace())
+                    .spawn();
+                
+                match npm_run {
+                    Ok(mut child) => {
+                        // If --open flag is set, open the browser
+                        if open {
+                            println!("Opening web browser...");
+                            // Give the server a moment to start
+                            std::thread::sleep(std::time::Duration::from_secs(2));
+                            
+                            #[cfg(target_os = "windows")]
+                            {
+                                let _ = std::process::Command::new("cmd")
+                                    .args(&["/C", &format!("start http://localhost:{}", port)])
+                                    .spawn();
+                            }
+                            
+                            #[cfg(target_os = "macos")]
+                            {
+                                let _ = std::process::Command::new("open")
+                                    .arg(format!("http://localhost:{}", port))
+                                    .spawn();
+                            }
+                            
+                            #[cfg(target_os = "linux")]
+                            {
+                                let _ = std::process::Command::new("xdg-open")
+                                    .arg(format!("http://localhost:{}", port))
+                                    .spawn();
+                            }
+                        }
+                        
+                        println!("Web application running at http://localhost:{}", port);
+                        println!("Press Ctrl+C to stop");
+                        
+                        // Wait for the server process to exit
+                        match child.wait() {
+                            Ok(_) => println!("Web server stopped"),
+                            Err(e) => println!("Error waiting for server: {}", e),
+                        }
+                        
+                        return Ok(());
+                    },
+                    Err(e) => {
+                        println!("Error: Failed to start development server: {}", e);
+                        return Err(anyhow::anyhow!("Failed to start development server: {}", e));
+                    }
+                }
             }
         }
     }

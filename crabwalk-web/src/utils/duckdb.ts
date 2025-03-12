@@ -628,24 +628,45 @@ export const getTableStats = async (tableName: string): Promise<TableInfo> => {
         }
       });
       
-      // Get row count - use a properly escaped table name
-      let queryStr: string;
-      if (schema) {
-        // Has schema, properly quote both parts
-        queryStr = `SELECT COUNT(*) FROM ${quoteIdentifier(schema)}.${quoteIdentifier(table)}`;
-      } else {
-        // No schema, just quote the table name
-        queryStr = `SELECT COUNT(*) FROM ${quoteIdentifier(table)}`;
+      // Get row count (try/catch in case table has issues)
+      let rowCount = 0;
+      try {
+        // Use the properly quoted name for the COUNT query
+        const countResult = await conn.query(`SELECT COUNT(*) as ct FROM ${quoteIdentifier(tableName)}`);
+        const countRow = countResult.toArray()[0];
+        console.log('Count row..........', countRow);
+        
+        // Handle different possible formats of the count result
+        if (Array.isArray(countRow)) {
+          // If it's an array, the count is the first element
+          rowCount = Number(countRow[0]);
+        } else if (typeof countRow === 'object' && countRow !== null) {
+          // If it's an object, try different property names
+          // First try 'count', then try the first property, whatever it's called
+          if ('ct' in countRow) {
+            rowCount = Number(countRow.ct);
+          } else {
+            // Get the first property value, whatever it's called
+            const firstKey = Object.keys(countRow)[0];
+            if (firstKey) {
+              rowCount = Number(countRow[firstKey]);
+            }
+          }
+        }
+        
+        // Ensure rowCount is a valid number
+        if (isNaN(rowCount)) {
+          console.warn(`Invalid row count for ${tableName}:`, countRow);
+          rowCount = 0;
+        }
+      } catch (err) {
+        console.warn(`Error getting row count for ${tableName}:`, err);
       }
-      
-      const countResult = await conn.query(queryStr);
-      const countRow = countResult.toArray()[0];
-      const rowCount = Number(Array.isArray(countRow) ? countRow[0] : countRow.count);
       
       // Create the table info
       const tableInfo: TableInfo = {
-        name: schema ? `${quoteIdentifier(schema)}.${quoteIdentifier(table)}` : quoteIdentifier(table),
-        displayName: schema ? `${schema}.${table}` : table,
+        name: quoteIdentifier(tableName),
+        displayName: tableName,
         rowCount,
         columnCount: columns.length,
         columns,
@@ -837,7 +858,32 @@ async function refreshTableCache(conn: AsyncDuckDBConnection): Promise<void> {
         // Use the properly quoted name for the COUNT query
         const countResult = await conn.query(`SELECT COUNT(*) FROM ${quotedName}`);
         const countRow = countResult.toArray()[0];
-        rowCount = Number(Array.isArray(countRow) ? countRow[0] : countRow.count);
+        
+        // Handle different possible formats of the count result
+        if (Array.isArray(countRow)) {
+          // If it's an array, the count is the first element
+          rowCount = Number(countRow[0]);
+        } else if (typeof countRow === 'object' && countRow !== null) {
+          // If it's an object, try different property names
+          // First try 'count', then try the first property, whatever it's called
+          if ('count' in countRow) {
+            rowCount = Number(countRow.count);
+          } else if ('COUNT(*)' in countRow) {
+            rowCount = Number(countRow['COUNT(*)']);
+          } else {
+            // Get the first property value, whatever it's called
+            const firstKey = Object.keys(countRow)[0];
+            if (firstKey) {
+              rowCount = Number(countRow[firstKey]);
+            }
+          }
+        }
+        
+        // Ensure rowCount is a valid number
+        if (isNaN(rowCount)) {
+          console.warn(`Invalid row count for ${displayName}:`, countRow);
+          rowCount = 0;
+        }
       } catch (err) {
         console.warn(`Error getting row count for ${displayName}:`, err);
       }

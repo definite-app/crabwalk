@@ -190,6 +190,22 @@ impl Crabwalk {
         
         Ok(())
     }
+    
+    /// Generate schema visualization
+    pub fn visualize_schema(&self, format: &str, output_path: Option<&str>, include_columns: bool) -> Result<()> {
+        // Get dependencies from SQL files
+        let dependencies = parser::dependencies::get_dependencies(&self.sql_folder, &self.dialect)?;
+        
+        // Determine output path if not provided
+        let viz_path = output_path.map(|p| p.to_string());
+        
+        // Generate visualization
+        schema::visualization::visualize_database_schema(&dependencies, format, viz_path.as_deref(), include_columns)?;
+        
+        tracing::info!("Schema visualization completed");
+        
+        Ok(())
+    }
 
     /// Run pre-queries to set up the environment
     fn run_pre_queries(&self, context: &executor::RunContext) -> Result<()> {

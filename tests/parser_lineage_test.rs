@@ -50,6 +50,8 @@ fn test_generate_mermaid_diagram_simple() {
         deps: HashSet::new(),
         filename: "source.sql".to_string(),
         config: None,
+        columns: Vec::new(),
+        column_lineage: Vec::new(),
     };
     dependencies.insert("source".to_string(), source);
     
@@ -60,6 +62,8 @@ fn test_generate_mermaid_diagram_simple() {
         deps: target_deps,
         filename: "target.sql".to_string(),
         config: None,
+        columns: Vec::new(),
+        column_lineage: Vec::new(),
     };
     dependencies.insert("target".to_string(), target);
     
@@ -90,6 +94,8 @@ fn test_generate_mermaid_diagram_complex() {
             deps: HashSet::new(),
             filename: format!("{}.sql", name),
             config: None,
+            columns: Vec::new(),
+            column_lineage: Vec::new(),
         });
     }
     
@@ -101,6 +107,8 @@ fn test_generate_mermaid_diagram_complex() {
         deps: intermediate_deps,
         filename: "intermediate.sql".to_string(),
         config: None,
+        columns: Vec::new(),
+        column_lineage: Vec::new(),
     });
     
     // Add final model that depends on intermediate
@@ -110,6 +118,8 @@ fn test_generate_mermaid_diagram_complex() {
         deps: final_deps,
         filename: "final.sql".to_string(),
         config: None,
+        columns: Vec::new(),
+        column_lineage: Vec::new(),
     });
     
     let result = generate_mermaid_diagram(path, &dependencies);

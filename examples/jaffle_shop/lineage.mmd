@@ -1,41 +1,41 @@
 graph TD
-    stg_customers
-    raw_orders
-    stg_products
     stg_locations
-    raw_stores
-    raw_products
-    stg_supplies
-    stg_order_items
-    raw_items
     stg_orders
-    raw_customers
-    raw_payments
-    products
-    orders
-    customers
-    locations
+    raw_stores
+    raw_items
     order_items
-    supplies
+    raw_products
     raw_supplies
-    raw_customers --> stg_customers
-    raw_products --> stg_products
+    stg_order_items
+    raw_orders
+    raw_payments
+    orders
+    stg_customers
+    locations
+    stg_products
+    customers
+    supplies
+    products
+    raw_customers
+    stg_supplies
     raw_stores --> stg_locations
-    raw_supplies --> stg_supplies
-    raw_items --> stg_order_items
     raw_orders --> stg_orders
-    stg_products --> products
-    order_items --> orders
-    stg_orders --> orders
-    stg_customers --> customers
-    stg_orders --> customers
-    orders --> customers
-    stg_locations --> locations
-    products --> order_items
-    stg_products --> order_items
     stg_orders --> order_items
-    supplies --> order_items
+    stg_products --> order_items
+    products --> order_items
     stg_order_items --> order_items
     orders --> order_items
     stg_supplies --> order_items
+    supplies --> order_items
+    raw_items --> stg_order_items
+    stg_orders --> orders
+    order_items --> orders
+    raw_customers --> stg_customers
+    stg_locations --> locations
+    raw_products --> stg_products
+    stg_orders --> customers
+    stg_customers --> customers
+    orders --> customers
     stg_supplies --> supplies
+    stg_products --> products
+    raw_supplies --> stg_supplies

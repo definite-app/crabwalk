@@ -5,6 +5,8 @@ use std::path::Path;
 
 use crate::parser::dependencies::Dependency;
 
+pub mod visualization;
+
 /// Generate an XML schema from the database
 pub fn generate_database_schema(
     dependencies: &HashMap<String, Dependency>,
@@ -55,11 +57,42 @@ fn add_schemas_section(xml: &mut String, dependencies: &HashMap<String, Dependen
         xml.push_str(&format!("    <table name=\"{}\">\n", table_name));
         xml.push_str(&format!("      <description>Generated from {}</description>\n", dependency.filename));
         
-        // Add inferred columns based on SQL if available
-        // For now, we'll just add a placeholder
-        xml.push_str("      <column name=\"id\" type=\"unknown\" primary_key=\"true\">\n");
-        xml.push_str("        <description>Primary key (automatically inferred)</description>\n");
-        xml.push_str("      </column>\n");
+        // Add columns based on SQL parsing
+        if dependency.columns.is_empty() {
+            // If no columns were extracted, add a placeholder
+            xml.push_str("      <column name=\"id\" type=\"unknown\" primary_key=\"true\">\n");
+            xml.push_str("        <description>Primary key (automatically inferred)</description>\n");
+            xml.push_str("      </column>\n");
+        } else {
+            // Add all extracted columns
+            for (i, column) in dependency.columns.iter().enumerate() {
+                let is_primary = i == 0; // Assume first column is primary key
+                xml.push_str(&format!("      <column name=\"{}\" type=\"{}\"{}>\n", 
+                    column.name, 
+                    column.data_type,
+                    if is_primary { " primary_key=\"true\"" } else { "" }
+                ));
+                
+                // Add column description
+                if let Some(expr) = &column.expression {
+                    xml.push_str(&format!("        <description>Derived from: {}</description>\n", expr));
+                } else if let (Some(table), Some(col)) = (&column.source_table, &column.source_column) {
+                    xml.push_str(&format!("        <description>From {}.{}</description>\n", table, col));
+                } else {
+                    xml.push_str("        <description>Column from query</description>\n");
+                }
+                
+                // Add source information if available
+                if let (Some(table), Some(col)) = (&column.source_table, &column.source_column) {
+                    xml.push_str("        <source>\n");
+                    xml.push_str(&format!("          <table>{}</table>\n", table));
+                    xml.push_str(&format!("          <column>{}</column>\n", col));
+                    xml.push_str("        </source>\n");
+                }
+                
+                xml.push_str("      </column>\n");
+            }
+        }
         
         // Add dependency information
         if !dependency.deps.is_empty() {
@@ -119,6 +152,20 @@ fn add_lineage_section(xml: &mut String, dependencies: &HashMap<String, Dependen
                 xml.push_str(&format!("            <source>{}</source>\n", dep));
             }
             xml.push_str("          </sources>\n");
+            
+            // Add column-level lineage if available
+            if !dependency.column_lineage.is_empty() {
+                xml.push_str("          <column_lineage>\n");
+                for lineage in &dependency.column_lineage {
+                    xml.push_str(&format!("            <mapping>\n"));
+                    xml.push_str(&format!("              <source_table>{}</source_table>\n", lineage.source_table));
+                    xml.push_str(&format!("              <source_column>{}</source_column>\n", lineage.source_column));
+                    xml.push_str(&format!("              <target_column>{}</target_column>\n", lineage.target_column));
+                    xml.push_str(&format!("            </mapping>\n"));
+                }
+                xml.push_str("          </column_lineage>\n");
+            }
+            
             xml.push_str("          <operations>\n");
             xml.push_str("            <operation>SQL transformation</operation>\n");
             xml.push_str("          </operations>\n");

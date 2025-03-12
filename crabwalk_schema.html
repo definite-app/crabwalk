@@ -1,0 +1,318 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Crabwalk Database Schema</title>
+  <style>
+    body { font-family: Arial, sans-serif; margin: 20px; }
+    h1 { color: #333; }
+    .schema-container { margin-top: 20px; }
+    .table { border: 1px solid #ccc; margin-bottom: 20px; border-radius: 5px; overflow: hidden; }
+    .table-header { background-color: #f0f0f0; padding: 10px; border-bottom: 1px solid #ccc; font-weight: bold; }
+    .table-body { padding: 10px; }
+    .column { margin-bottom: 5px; padding: 5px; border-bottom: 1px solid #eee; }
+    .column-name { font-weight: bold; }
+    .column-type { color: #666; margin-left: 10px; }
+    .column-source { color: #888; font-size: 0.9em; margin-top: 3px; }
+    .dependencies { margin-top: 10px; color: #555; }
+    .lineage-container { margin-top: 30px; }
+    .lineage-title { color: #333; margin-bottom: 10px; }
+    .lineage-diagram { border: 1px solid #ddd; padding: 20px; background-color: #f9f9f9; }
+    #schema-viz { width: 100%; height: 600px; border: 1px solid #ccc; }
+    .controls { margin-bottom: 20px; }
+    button { padding: 5px 10px; margin-right: 10px; }
+  </style>
+  <script src="https://cdn.jsdelivr.net/npm/mermaid/dist/mermaid.min.js"></script>
+</head>
+<body>
+  <h1>Crabwalk Database Schema</h1>
+  <div class="controls">
+    <button onclick="saveAsSVG()">Save as SVG</button>
+    <button onclick="saveAsPNG()">Save as PNG</button>
+    <button onclick="toggleView('tables')">Show Tables</button>
+    <button onclick="toggleView('diagram')">Show Diagram</button>
+  </div>
+  <div id="tables-view" class="schema-container">
+    <div class="table">
+      <div class="table-header">customer_orders</div>
+      <div class="table-body">
+        <div class="column">
+          <span class="column-name">customer_id</span>
+          <span class="column-type">(unknown)</span>
+          <div class="column-source">From c.customer_id</div>
+        </div>
+        <div class="column">
+          <span class="column-name">customer_name</span>
+          <span class="column-type">(unknown)</span>
+          <div class="column-source">From c.name</div>
+        </div>
+        <div class="column">
+          <span class="column-name">email</span>
+          <span class="column-type">(unknown)</span>
+          <div class="column-source">From c.email</div>
+        </div>
+        <div class="column">
+          <span class="column-name">order_id</span>
+          <span class="column-type">(unknown)</span>
+          <div class="column-source">From o.order_id</div>
+        </div>
+        <div class="column">
+          <span class="column-name">order_date</span>
+          <span class="column-type">(unknown)</span>
+          <div class="column-source">From o.order_date</div>
+        </div>
+        <div class="column">
+          <span class="column-name">amount</span>
+          <span class="column-type">(unknown)</span>
+          <div class="column-source">From o.amount</div>
+        </div>
+        <div class="dependencies">
+          <strong>Dependencies:</strong> stg_customers, stg_orders
+        </div>
+      </div>
+    </div>
+    <div class="table">
+      <div class="table-header">order_summary</div>
+      <div class="table-body">
+        <div class="column">
+          <span class="column-name">customer_id</span>
+          <span class="column-type">(unknown)</span>
+        </div>
+        <div class="column">
+          <span class="column-name">order_count</span>
+          <span class="column-type">(numeric)</span>
+          <div class="column-source">Derived from expression</div>
+        </div>
+        <div class="column">
+          <span class="column-name">total_spent</span>
+          <span class="column-type">(numeric)</span>
+          <div class="column-source">Derived from expression</div>
+        </div>
+        <div class="column">
+          <span class="column-name">first_order_date</span>
+          <span class="column-type">(unknown)</span>
+          <div class="column-source">Derived from expression</div>
+        </div>
+        <div class="column">
+          <span class="column-name">last_order_date</span>
+          <span class="column-type">(unknown)</span>
+          <div class="column-source">Derived from expression</div>
+        </div>
+        <div class="column">
+          <span class="column-name">average_order_value</span>
+          <span class="column-type">(numeric)</span>
+          <div class="column-source">Derived from expression</div>
+        </div>
+        <div class="dependencies">
+          <strong>Dependencies:</strong> stg_orders
+        </div>
+      </div>
+    </div>
+    <div class="table">
+      <div class="table-header">stg_customers</div>
+      <div class="table-body">
+        <div class="column">
+          <span class="column-name">customer_id</span>
+          <span class="column-type">(numeric)</span>
+          <div class="column-source">Derived from expression</div>
+        </div>
+        <div class="column">
+          <span class="column-name">name</span>
+          <span class="column-type">(string)</span>
+          <div class="column-source">Derived from expression</div>
+        </div>
+        <div class="column">
+          <span class="column-name">email</span>
+          <span class="column-type">(string)</span>
+          <div class="column-source">Derived from expression</div>
+        </div>
+        <div class="column">
+          <span class="column-name">customer_id</span>
+          <span class="column-type">(numeric)</span>
+          <div class="column-source">Derived from expression</div>
+        </div>
+        <div class="column">
+          <span class="column-name">name</span>
+          <span class="column-type">(string)</span>
+          <div class="column-source">Derived from expression</div>
+        </div>
+        <div class="column">
+          <span class="column-name">email</span>
+          <span class="column-type">(string)</span>
+          <div class="column-source">Derived from expression</div>
+        </div>
+      </div>
+    </div>
+    <div class="table">
+      <div class="table-header">stg_orders</div>
+      <div class="table-body">
+        <div class="column">
+          <span class="column-name">order_id</span>
+          <span class="column-type">(numeric)</span>
+          <div class="column-source">Derived from expression</div>
+        </div>
+        <div class="column">
+          <span class="column-name">customer_id</span>
+          <span class="column-type">(numeric)</span>
+          <div class="column-source">Derived from expression</div>
+        </div>
+        <div class="column">
+          <span class="column-name">order_date</span>
+          <span class="column-type">(string)</span>
+          <div class="column-source">Derived from expression</div>
+        </div>
+        <div class="column">
+          <span class="column-name">amount</span>
+          <span class="column-type">(numeric)</span>
+          <div class="column-source">Derived from expression</div>
+        </div>
+        <div class="column">
+          <span class="column-name">order_id</span>
+          <span class="column-type">(numeric)</span>
+          <div class="column-source">Derived from expression</div>
+        </div>
+        <div class="column">
+          <span class="column-name">customer_id</span>
+          <span class="column-type">(numeric)</span>
+          <div class="column-source">Derived from expression</div>
+        </div>
+        <div class="column">
+          <span class="column-name">order_date</span>
+          <span class="column-type">(string)</span>
+          <div class="column-source">Derived from expression</div>
+        </div>
+        <div class="column">
+          <span class="column-name">amount</span>
+          <span class="column-type">(numeric)</span>
+          <div class="column-source">Derived from expression</div>
+        </div>
+        <div class="column">
+          <span class="column-name">order_id</span>
+          <span class="column-type">(numeric)</span>
+          <div class="column-source">Derived from expression</div>
+        </div>
+        <div class="column">
+          <span class="column-name">customer_id</span>
+          <span class="column-type">(numeric)</span>
+          <div class="column-source">Derived from expression</div>
+        </div>
+        <div class="column">
+          <span class="column-name">order_date</span>
+          <span class="column-type">(string)</span>
+          <div class="column-source">Derived from expression</div>
+        </div>
+        <div class="column">
+          <span class="column-name">amount</span>
+          <span class="column-type">(numeric)</span>
+          <div class="column-source">Derived from expression</div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div id="diagram-view" class="lineage-container" style="display:none;">
+    <h2 class="lineage-title">Database Schema Diagram</h2>
+    <div class="lineage-diagram">
+      <div class="mermaid" id="schema-viz">
+erDiagram
+    customer_orders {
+        unknown customer_id PK "Column"
+        unknown customer_name  "Column"
+        unknown email  "Column"
+        unknown order_id  "Column"
+        unknown order_date  "Column"
+        unknown amount  "Column"
+    }
+    order_summary {
+        unknown customer_id PK "Column"
+        numeric order_count  "Derived"
+        numeric total_spent  "Derived"
+        unknown first_order_date  "Derived"
+        unknown last_order_date  "Derived"
+        numeric average_order_value  "Derived"
+    }
+    stg_customers {
+        numeric customer_id PK "Derived"
+        string name  "Derived"
+        string email  "Derived"
+        numeric customer_id  "Derived"
+        string name  "Derived"
+        string email  "Derived"
+    }
+    stg_orders {
+        numeric order_id PK "Derived"
+        numeric customer_id  "Derived"
+        string order_date  "Derived"
+        numeric amount  "Derived"
+        numeric order_id  "Derived"
+        numeric customer_id  "Derived"
+        string order_date  "Derived"
+        numeric amount  "Derived"
+        numeric order_id  "Derived"
+        numeric customer_id  "Derived"
+        string order_date  "Derived"
+        numeric amount  "Derived"
+    }
+    stg_customers }|--|| customer_orders : depends_on
+    stg_orders }|--|| customer_orders : depends_on
+    stg_orders }|--|| order_summary : depends_on
+      </div>
+    </div>
+  </div>
+<script>
+  // Initialize Mermaid
+  mermaid.initialize({ startOnLoad: true, theme: 'default' });
+  function toggleView(view) {
+    if (view === 'tables') {
+      document.getElementById('tables-view').style.display = 'block';
+      document.getElementById('diagram-view').style.display = 'none';
+    } else {
+      document.getElementById('tables-view').style.display = 'none';
+      document.getElementById('diagram-view').style.display = 'block';
+    }
+  }
+  function saveAsSVG() {
+    const svgEl = document.querySelector('#schema-viz svg');
+    if (svgEl) {
+      const svgData = new XMLSerializer().serializeToString(svgEl);
+      const svgBlob = new Blob([svgData], {type: 'image/svg+xml;charset=utf-8'});
+      const svgUrl = URL.createObjectURL(svgBlob);
+      const downloadLink = document.createElement('a');
+      downloadLink.href = svgUrl;
+      downloadLink.download = 'crabwalk_schema.svg';
+      document.body.appendChild(downloadLink);
+      downloadLink.click();
+      document.body.removeChild(downloadLink);
+    } else {
+      alert('Please view the diagram first');
+      toggleView('diagram');
+    }
+  }
+  function saveAsPNG() {
+    const svgEl = document.querySelector('#schema-viz svg');
+    if (svgEl) {
+      const canvas = document.createElement('canvas');
+      const ctx = canvas.getContext('2d');
+      const svgData = new XMLSerializer().serializeToString(svgEl);
+      const img = new Image();
+      img.onload = function() {
+        canvas.width = img.width;
+        canvas.height = img.height;
+        ctx.drawImage(img, 0, 0);
+        const pngUrl = canvas.toDataURL('image/png');
+        const downloadLink = document.createElement('a');
+        downloadLink.href = pngUrl;
+        downloadLink.download = 'crabwalk_schema.png';
+        document.body.appendChild(downloadLink);
+        downloadLink.click();
+        document.body.removeChild(downloadLink);
+      };
+      img.src = 'data:image/svg+xml;base64,' + btoa(unescape(encodeURIComponent(svgData)));
+    } else {
+      alert('Please view the diagram first');
+      toggleView('diagram');
+    }
+  }
+</script>
+</body>
+</html>

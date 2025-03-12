@@ -1147,6 +1147,388 @@ fn try_via_prepare_then_serialize(conn: &Connection, sql: &str) -> Result<Value>
     Err(anyhow::anyhow!("No result from prepare-then-serialize approach"))
 }
 
+/// Extract column information from a SQL query
+///
+/// # Arguments
+///
+/// * `statement` - SQL statement to extract columns from
+///
+/// # Returns
+///
+/// * `Vec<ColumnInfo>` - Vector of column information
+pub fn extract_columns(statement: &Statement) -> Result<Vec<ColumnInfo>> {
+    let mut columns = Vec::new();
+    
+    if let Statement::Query(query) = statement {
+        // Extract columns from SELECT clause
+        extract_columns_from_query(query, &mut columns)?;
+    }
+    
+    Ok(columns)
+}
+
+/// Extract column information from a SQL query
+fn extract_columns_from_query(query: &Query, columns: &mut Vec<ColumnInfo>) -> Result<()> {
+    match query.body.as_ref() {
+        SetExpr::Select(select) => {
+            // Process the projection (SELECT list)
+            for item in &select.projection {
+                match item {
+                    SelectItem::UnnamedExpr(expr) => {
+                        // For unnamed expressions, use the expression as column name
+                        let (name, data_type, is_derived, expression) = extract_expr_info(expr);
+                        let source_info = extract_source_from_expr(expr);
+                        
+                        columns.push(ColumnInfo {
+                            name,
+                            data_type,
+                            source_table: source_info.as_ref().map(|s| s.0.clone()),
+                            source_column: source_info.as_ref().map(|s| s.1.clone()),
+                            is_derived,
+                            expression,
+                        });
+                    },
+                    SelectItem::ExprWithAlias { expr, alias } => {
+                        // For expressions with aliases, use the alias as column name
+                        let (_, data_type, is_derived, expression) = extract_expr_info(expr);
+                        let source_info = extract_source_from_expr(expr);
+                        
+                        columns.push(ColumnInfo {
+                            name: alias.to_string(),
+                            data_type,
+                            source_table: source_info.as_ref().map(|s| s.0.clone()),
+                            source_column: source_info.as_ref().map(|s| s.1.clone()),
+                            is_derived,
+                            expression,
+                        });
+                    },
+                    SelectItem::QualifiedWildcard(object_name, _) => {
+                        // For qualified wildcards (like table.*), add a placeholder
+                        // Extract the qualifier from the object name
+                        let qualifier = object_name.to_string();
+                        columns.push(ColumnInfo {
+                            name: format!("{}.*", qualifier),
+                            data_type: "unknown".to_string(),
+                            source_table: Some(qualifier),
+                            source_column: None,
+                            is_derived: false,
+                            expression: None,
+                        });
+                    },
+                    SelectItem::Wildcard(_) => {
+                        // For wildcards (*), add a placeholder
+                        columns.push(ColumnInfo {
+                            name: "*".to_string(),
+                            data_type: "unknown".to_string(),
+                            source_table: None,
+                            source_column: None,
+                            is_derived: false,
+                            expression: None,
+                        });
+                    },
+                }
+            }
+        },
+        SetExpr::Query(subquery) => {
+            // Recursively extract columns from subquery
+            extract_columns_from_query(subquery, columns)?;
+        },
+        SetExpr::SetOperation { left, right, .. } => {
+            // Extract columns from both sides of the set operation
+            extract_columns_from_set_expr(left, columns)?;
+            extract_columns_from_set_expr(right, columns)?;
+        },
+        _ => {
+            // Unsupported expression type
+            tracing::warn!("Unsupported SetExpr type for column extraction: {:?}", query.body);
+        }
+    }
+    
+    Ok(())
+}
+
+/// Extract columns from a set expression
+fn extract_columns_from_set_expr(expr: &SetExpr, columns: &mut Vec<ColumnInfo>) -> Result<()> {
+    match expr {
+        SetExpr::Select(select) => {
+            // Process the projection (SELECT list)
+            for item in &select.projection {
+                match item {
+                    SelectItem::UnnamedExpr(expr) => {
+                        let (name, data_type, is_derived, expression) = extract_expr_info(expr);
+                        let source_info = extract_source_from_expr(expr);
+                        
+                        columns.push(ColumnInfo {
+                            name,
+                            data_type,
+                            source_table: source_info.as_ref().map(|s| s.0.clone()),
+                            source_column: source_info.as_ref().map(|s| s.1.clone()),
+                            is_derived,
+                            expression,
+                        });
+                    },
+                    SelectItem::ExprWithAlias { expr, alias } => {
+                        let (_, data_type, is_derived, expression) = extract_expr_info(expr);
+                        let source_info = extract_source_from_expr(expr);
+                        
+                        columns.push(ColumnInfo {
+                            name: alias.to_string(),
+                            data_type,
+                            source_table: source_info.as_ref().map(|s| s.0.clone()),
+                            source_column: source_info.as_ref().map(|s| s.1.clone()),
+                            is_derived,
+                            expression,
+                        });
+                    },
+                    _ => {
+                        // Handle wildcards or other selection items
+                        // For now, we'll skip these
+                    }
+                }
+            }
+        },
+        SetExpr::Query(subquery) => {
+            // Recursively extract columns from subquery
+            extract_columns_from_query(subquery, columns)?;
+        },
+        SetExpr::SetOperation { left, right, .. } => {
+            // Extract columns from both sides of the set operation
+            extract_columns_from_set_expr(left, columns)?;
+            extract_columns_from_set_expr(right, columns)?;
+        },
+        _ => {
+            // Unsupported expression type
+            tracing::warn!("Unsupported SetExpr type for column extraction: {:?}", expr);
+        }
+    }
+    
+    Ok(())
+}
+
+/// Extract information from an expression
+///
+/// Returns: (name, data_type, is_derived, expression)
+fn extract_expr_info(expr: &Expr) -> (String, String, bool, Option<String>) {
+    match expr {
+        Expr::Identifier(ident) => {
+            // Simple column reference
+            (ident.to_string(), "unknown".to_string(), false, None)
+        },
+        Expr::CompoundIdentifier(parts) => {
+            // Column reference with table qualifier (e.g., table.column)
+            let name = parts.last().map_or("unknown".to_string(), |p| p.to_string());
+            (name, "unknown".to_string(), false, None)
+        },
+        Expr::Function(func) => {
+            // Function call
+            let func_name = func.name.to_string();
+            // Infer type from common aggregate functions
+            let data_type = match func_name.to_lowercase().as_str() {
+                "sum" | "count" | "avg" => "numeric".to_string(),
+                "min" | "max" => "unknown".to_string(), // Type depends on argument
+                "string_agg" | "concat" => "string".to_string(),
+                _ => "unknown".to_string(),
+            };
+            (func_name, data_type, true, Some(format!("{:?}", expr)))
+        },
+        Expr::BinaryOp { .. } => {
+            // Binary operation
+            ("expression".to_string(), "unknown".to_string(), true, Some(format!("{:?}", expr)))
+        },
+        Expr::Value(value) => {
+            // Literal value
+            let data_type = match value {
+                SqlValue::Number(_, _) => "numeric".to_string(),
+                SqlValue::SingleQuotedString(_) | SqlValue::DoubleQuotedString(_) => "string".to_string(),
+                SqlValue::Boolean(_) => "boolean".to_string(),
+                SqlValue::Null => "null".to_string(),
+                _ => "unknown".to_string(),
+            };
+            ("literal".to_string(), data_type, true, Some(format!("{:?}", expr)))
+        },
+        _ => {
+            // Other expression types
+            ("expression".to_string(), "unknown".to_string(), true, Some(format!("{:?}", expr)))
+        }
+    }
+}
+
+/// Extract source table and column from an expression
+///
+/// Returns: Option<(source_table, source_column)>
+fn extract_source_from_expr(expr: &Expr) -> Option<(String, String)> {
+    match expr {
+        Expr::Identifier(_) => {
+            // Simple column reference without table - can't determine source table
+            None
+        },
+        Expr::CompoundIdentifier(parts) => {
+            // Column reference with table qualifier (e.g., table.column)
+            if parts.len() >= 2 {
+                let table = parts[0].to_string();
+                let column = parts[1].to_string();
+                Some((table, column))
+            } else {
+                None
+            }
+        },
+        _ => {
+            // Other expression types - derived, not direct source
+            None
+        }
+    }
+}
+
+/// Extract column-level lineage from a SQL query
+///
+/// # Arguments
+///
+/// * `statement` - SQL statement to extract lineage from
+/// * `model_name` - Name of the model/table being created
+///
+/// # Returns
+///
+/// * `Vec<TableColumnRelationship>` - Vector of column relationships
+pub fn extract_column_lineage(statement: &Statement, model_name: &str) -> Result<Vec<TableColumnRelationship>> {
+    let mut relationships = Vec::new();
+    
+    if let Statement::Query(query) = statement {
+        extract_column_lineage_from_query(query, model_name, &mut relationships)?;
+    }
+    
+    Ok(relationships)
+}
+
+/// Extract column-level lineage from a query
+fn extract_column_lineage_from_query(query: &Query, model_name: &str, relationships: &mut Vec<TableColumnRelationship>) -> Result<()> {
+    match query.body.as_ref() {
+        SetExpr::Select(select) => {
+            // Process the projection (SELECT list)
+            for (index, item) in select.projection.iter().enumerate() {
+                match item {
+                    SelectItem::UnnamedExpr(expr) => {
+                        // Get target column name (use index if can't determine)
+                        let target_column = match expr {
+                            Expr::Identifier(ident) => ident.to_string(),
+                            Expr::CompoundIdentifier(parts) => parts.last().map_or(
+                                format!("column_{}", index), 
+                                |p| p.to_string()
+                            ),
+                            _ => format!("column_{}", index),
+                        };
+                        
+                        // Extract source information
+                        if let Some((source_table, source_column)) = extract_source_from_expr(expr) {
+                            relationships.push(TableColumnRelationship {
+                                source_table,
+                                source_column,
+                                target_column,
+                            });
+                        }
+                    },
+                    SelectItem::ExprWithAlias { expr, alias } => {
+                        // Target column is the alias
+                        let target_column = alias.to_string();
+                        
+                        // Extract source information
+                        if let Some((source_table, source_column)) = extract_source_from_expr(expr) {
+                            relationships.push(TableColumnRelationship {
+                                source_table,
+                                source_column,
+                                target_column,
+                            });
+                        }
+                    },
+                    _ => {
+                        // Handle wildcards or other selection items
+                        // For now, we'll skip these as they're more complex
+                    }
+                }
+            }
+        },
+        SetExpr::Query(subquery) => {
+            // Recursively extract from subquery
+            extract_column_lineage_from_query(subquery, model_name, relationships)?;
+        },
+        SetExpr::SetOperation { left, right, .. } => {
+            // Extract from both sides of the set operation
+            extract_column_lineage_from_set_expr(left, model_name, relationships)?;
+            extract_column_lineage_from_set_expr(right, model_name, relationships)?;
+        },
+        _ => {
+            // Unsupported expression type
+            tracing::warn!("Unsupported SetExpr type for column lineage extraction: {:?}", query.body);
+        }
+    }
+    
+    Ok(())
+}
+
+/// Extract column-level lineage from a set expression
+fn extract_column_lineage_from_set_expr(expr: &SetExpr, model_name: &str, relationships: &mut Vec<TableColumnRelationship>) -> Result<()> {
+    match expr {
+        SetExpr::Select(select) => {
+            // Process the projection (SELECT list)
+            for (index, item) in select.projection.iter().enumerate() {
+                match item {
+                    SelectItem::UnnamedExpr(expr) => {
+                        // Get target column name (use index if can't determine)
+                        let target_column = match expr {
+                            Expr::Identifier(ident) => ident.to_string(),
+                            Expr::CompoundIdentifier(parts) => parts.last().map_or(
+                                format!("column_{}", index), 
+                                |p| p.to_string()
+                            ),
+                            _ => format!("column_{}", index),
+                        };
+                        
+                        // Extract source information
+                        if let Some((source_table, source_column)) = extract_source_from_expr(expr) {
+                            relationships.push(TableColumnRelationship {
+                                source_table,
+                                source_column,
+                                target_column,
+                            });
+                        }
+                    },
+                    SelectItem::ExprWithAlias { expr, alias } => {
+                        // Target column is the alias
+                        let target_column = alias.to_string();
+                        
+                        // Extract source information
+                        if let Some((source_table, source_column)) = extract_source_from_expr(expr) {
+                            relationships.push(TableColumnRelationship {
+                                source_table,
+                                source_column,
+                                target_column,
+                            });
+                        }
+                    },
+                    _ => {
+                        // Handle wildcards or other selection items
+                        // For now, we'll skip these
+                    }
+                }
+            }
+        },
+        SetExpr::Query(subquery) => {
+            // Recursively extract from subquery
+            extract_column_lineage_from_query(subquery, model_name, relationships)?;
+        },
+        SetExpr::SetOperation { left, right, .. } => {
+            // Extract from both sides of the set operation
+            extract_column_lineage_from_set_expr(left, model_name, relationships)?;
+            extract_column_lineage_from_set_expr(right, model_name, relationships)?;
+        },
+        _ => {
+            // Unsupported expression type
+            tracing::warn!("Unsupported SetExpr type for column lineage extraction: {:?}", expr);
+        }
+    }
+    
+    Ok(())
+}
+
 /// Check if a statement is a SELECT query
 ///
 /// # Arguments
@@ -1167,6 +1549,34 @@ pub fn is_select_tree(statement: &Statement) -> bool {
         }
         _ => false,
     }
+}
+
+/// Column information extracted from SQL query
+#[derive(Debug, Clone)]
+pub struct ColumnInfo {
+    /// Column name
+    pub name: String,
+    /// Inferred column type (may be "unknown" if can't be determined)
+    pub data_type: String,
+    /// Source table (if available)
+    pub source_table: Option<String>,
+    /// Original column name in source table (if different from name)
+    pub source_column: Option<String>,
+    /// Whether this is derived from an expression
+    pub is_derived: bool,
+    /// Expression that generates this column (if derived)
+    pub expression: Option<String>,
+}
+
+/// Table and column relationship extracted from SQL query
+#[derive(Debug, Clone)]
+pub struct TableColumnRelationship {
+    /// Source table
+    pub source_table: String,
+    /// Source column
+    pub source_column: String,
+    /// Target column
+    pub target_column: String,
 }
 
 /// Extract table names from a SQL query

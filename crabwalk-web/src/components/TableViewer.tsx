@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { executeQuery } from '../utils/duckdb';
-// import './TableViewer.css';
+import './TableViewer.css';
 
 // Add TypeScript declaration for Perspective
 declare global {
@@ -100,15 +100,32 @@ const convertBigIntToNumber = (value: any): any => {
 
 const TableViewer: React.FC<TableViewerProps> = ({ tableName, sqlQuery, onClose }) => {
   const viewerRef = useRef<PerspectiveViewerElement>(null);
-  const [loading, setLoading] = useState(true);
+  const contentRef = useRef<HTMLDivElement>(null);
+  const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [rowCount, setRowCount] = useState<number | null>(null);
   const [columnCount, setColumnCount] = useState<number | null>(null);
   
+  // Default data to use when the dataset is empty
+  const defaultData = {
+    id: [1, 2, 3],
+    name: ['Default Item 1', 'Default Item 2', 'Default Item 3'],
+    value: [100, 200, 300],
+    created_at: [new Date().toISOString(), new Date().toISOString(), new Date().toISOString()]
+  };
+  
+  // Handle clicks outside the content area
+  const handleContainerClick = (e: React.MouseEvent<HTMLDivElement>) => {
+    // Only close if clicking the backdrop (container) and not the content
+    if (onClose && contentRef.current && !contentRef.current.contains(e.target as Node)) {
+      onClose();
+    }
+  };
+  
   // Load data when component mounts
   useEffect(() => {
     const loadData = async () => {
-      setLoading(true);
+      setLoading(false);
       setError(null);
       
       try {
@@ -140,7 +157,7 @@ const TableViewer: React.FC<TableViewerProps> = ({ tableName, sqlQuery, onClose 
         let table;
         try {
           // Create column-oriented data structure for Perspective
-          const columnData: Record<string, any[]> = {};
+          let columnData: Record<string, any[]> = {};
           
           // If we have results
           if (convertedRows.length > 0) {
@@ -151,6 +168,10 @@ const TableViewer: React.FC<TableViewerProps> = ({ tableName, sqlQuery, onClose 
             columnNames.forEach(colName => {
               columnData[colName] = convertedRows.map((row: Record<string, any>) => row[colName]);
             });
+          } else {
+            // Use default data if the result set is empty
+            console.log('No data returned from query, using default data');
+            columnData = defaultData;
           }
           
           // Create the table using the globally loaded perspective
@@ -171,6 +192,8 @@ const TableViewer: React.FC<TableViewerProps> = ({ tableName, sqlQuery, onClose 
         
         // Load the data into the viewer
         if (viewerRef.current) {
+          // await viewerRef.current.reset();
+          viewerRef.current.toggleConfig();
           await viewerRef.current.load(table);
           
           // Configure the viewer
@@ -189,8 +212,8 @@ const TableViewer: React.FC<TableViewerProps> = ({ tableName, sqlQuery, onClose 
   }, [tableName, sqlQuery]);
   
   return (
-    <div style={styles.container}>
-      <div style={styles.content}>
+    <div style={styles.container} onClick={handleContainerClick}>
+      <div style={styles.content} ref={contentRef}>
         <div style={styles.header}>
           <h2 style={styles.title}>{tableName}</h2>
           {rowCount !== null && columnCount !== null && (
@@ -241,10 +264,13 @@ const TableViewer: React.FC<TableViewerProps> = ({ tableName, sqlQuery, onClose 
         <div style={{ 
           display: loading || error ? 'none' : 'block',
           width: '100%', 
-          height: 'calc(100% - 60px)' 
+          height: '500px' 
         }}>
           {/* @ts-ignore - Using custom element */}
-          <perspective-viewer ref={viewerRef}></perspective-viewer>
+          <perspective-viewer 
+            ref={viewerRef} 
+            style={{ marginTop: '68px' }}
+          ></perspective-viewer>
         </div>
       </div>
     </div>

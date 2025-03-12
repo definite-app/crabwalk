@@ -7,7 +7,9 @@ use walkdir::WalkDir;
 
 use crate::config::ModelConfig;
 use crate::parser::config::extract_config_from_sql;
-use crate::parser::sql::{extract_tables, parse_sql};
+use crate::parser::sql::{extract_tables, parse_sql, extract_columns, extract_column_lineage};
+
+use crate::parser::sql::{ColumnInfo, TableColumnRelationship};
 
 /// Represents a dependency for a model/query
 #[derive(Debug, Clone)]
@@ -18,6 +20,10 @@ pub struct Dependency {
     pub filename: String,
     /// Model configuration from SQL comments
     pub config: Option<ModelConfig>,
+    /// Column information for this model
+    pub columns: Vec<ColumnInfo>,
+    /// Column-level lineage relationships
+    pub column_lineage: Vec<TableColumnRelationship>,
 }
 
 /// Get dependencies for all SQL files in a folder
@@ -92,27 +98,47 @@ fn process_sql_file(path: &Path, dialect: &str, dependencies: &mut HashMap<Strin
     // Log the number of statements parsed
     tracing::info!("Parsed {} statements from file: {}", statements.len(), path.display());
     
-    for statement in statements {
+    // For storing column information and lineage
+    let mut columns = Vec::new();
+    let mut column_lineage = Vec::new();
+    
+    for statement in &statements {
         // Log the statement type
         tracing::info!("Processing statement: {:?}", statement);
         
         // Extract tables and add to deps
-        let tables = extract_tables(&statement);
+        let tables = extract_tables(statement);
         tracing::info!("Extracted tables: {:?}", tables);
         
         deps.extend(tables);
+        
+        // Extract column information
+        if let Ok(cols) = extract_columns(statement) {
+            tracing::info!("Extracted {} columns from statement", cols.len());
+            columns.extend(cols);
+        }
+        
+        // Extract column lineage
+        if let Ok(lineage) = extract_column_lineage(statement, &model_name) {
+            tracing::info!("Extracted {} column lineage relationships", lineage.len());
+            column_lineage.extend(lineage);
+        }
     }
     
     // Remove self-dependencies (CTE references)
     deps.remove(&model_name);
     
     tracing::info!("Final dependencies for {}: {:?}", model_name, deps);
+    tracing::info!("Column count for {}: {}", model_name, columns.len());
+    tracing::info!("Column lineage count for {}: {}", model_name, column_lineage.len());
     
     // Add dependency to the map
     dependencies.insert(model_name, Dependency {
         deps,
         filename: path.to_string_lossy().to_string(),
         config,
+        columns,
+        column_lineage,
     });
     
     Ok(())

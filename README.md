@@ -7,6 +7,9 @@ Crabwalk is a lightweight SQL orchestrator built on top of DuckDB. It processes 
 - **SQL Orchestration**: Automatically determine the execution order of SQL queries based on dependencies
 - **Flexible Output Types**: Configure outputs as tables, views, or files (Parquet, CSV, JSON)
 - **Model-level Configuration**: Set output types and other options at the model level using SQL comments
+- **Schema Generation**: Generate detailed XML database schema including tables, columns, and relationships
+- **Column-level Lineage**: Track data lineage at the column level to understand data flow
+- **Schema Visualization**: Create interactive HTML visualizations of database schemas and dependencies
 - **S3 Integration**: Backup and restore your DuckDB database to/from S3 (optional)
 - **Lightweight**: Minimal dependencies, fast execution
 - **Environment Variables**: Support for environment variables in SQL queries
@@ -71,6 +74,15 @@ crabwalk run ./sql --db my_database.duckdb --schema transform
 # Use different output types
 crabwalk run ./sql --output-type view
 crabwalk run ./sql --output-type parquet --output-location ./data/parquet
+
+# Generate database schema XML
+crabwalk --schema-only --schema-file schema.xml ./sql 
+
+# Generate schema visualization
+crabwalk visualize --format html --output schema.html --columns ./sql
+
+# Launch the web application for interactive visualization
+crabwalk app --open
 ```
 
 ### Backup and Restore (with S3 support)
@@ -110,13 +122,15 @@ SELECT * FROM source_table
 - Python transformations are not yet supported
 - Jinja templating is not supported (environment variables are available)
 
-## Lineage Diagrams
+## Lineage and Schema Visualization
+
+### Lineage Diagrams
 
 Crabwalk automatically generates lineage diagrams to visualize dependencies between your SQL models:
 
 ```bash
 # Generate lineage diagram for SQL files in a directory
-crabwalk lineage ./sql_folder
+crabwalk --lineage-only ./sql_folder
 ```
 
 This creates:
@@ -136,6 +150,62 @@ graph TD
 ```
 
 The generated URL uses proper compression and encoding to ensure it works correctly with the Mermaid Live Editor.
+
+### Schema Generation
+
+Crabwalk can generate detailed XML database schemas that include table structures, column information, and dependencies:
+
+```bash
+# Generate schema XML file
+crabwalk --schema-only --schema-file schema.xml ./sql_folder
+```
+
+This creates an XML file with:
+- Detailed table definitions
+- Column information including data types and relationships
+- Source dependencies between tables
+- Lineage information showing data transformations
+
+### Schema Visualization
+
+#### Static HTML Visualization
+
+For a simple way to visualize your schema, use the visualization tool to generate static HTML:
+
+```bash
+# Generate HTML schema visualization with column-level details
+crabwalk visualize --format html --output schema.html --columns ./sql_folder
+```
+
+The visualization tool provides:
+- Interactive HTML view of your database schema
+- Table and column details in a readable format
+- Entity-relationship diagram using Mermaid
+- Column-level lineage tracking (with `--columns` flag)
+- Export options for SVG and PNG
+
+#### Web Application
+
+For a fully interactive experience, Crabwalk includes a web application:
+
+```bash
+# Launch the web application
+crabwalk app
+
+# Launch with a specific port
+crabwalk app --port 8080
+
+# Launch and automatically open in your browser
+crabwalk app --open
+```
+
+The web application allows you to:
+- Upload and view schema XML files
+- Visualize Mermaid lineage diagrams
+- Browse SQL files
+- Explore your data transformations in a user-friendly interface
+- Visualize column-level relationships
+- Share visualizations with your team
 
 ## Notes
 
