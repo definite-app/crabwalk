@@ -136,78 +136,12 @@ const DatabaseExplorer: React.FC<DatabaseExplorerProps> = ({ className }) => {
     fetchTables();
   }, [refreshCounter]);
   
-  // Handle file upload for database files
-  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (!e.target.files || e.target.files.length === 0) return;
-    
-    setLoading(true);
-    setError(null);
-    
-    try {
-      const file = e.target.files[0];
-      await loadDatabaseFile(file);
-      
-      // Refresh the table list
-      refreshTables();
-    } catch (err) {
-      console.error('Error loading database file:', err);
-      let errorMessage = err instanceof Error ? err.message : String(err);
-      let diagnosticInfo = '';
-      
-      // Capture stack trace for debugging if available
-      if (err instanceof Error && err.stack) {
-        console.error('Error stack:', err.stack);
-        diagnosticInfo = `\n\nDiagnostic information has been logged to the console. Please open the browser developer console (F12) and share these logs when reporting this issue.`;
-      }
-      
-      // Provide more helpful error messages for common issues
-      if (errorMessage.includes('addEventListener is not a function')) {
-        errorMessage = 'Failed to initialize database worker. This is likely due to a browser compatibility issue.';
-        
-        // Add browser compatibility troubleshooting
-        try {
-          const browserInfo = `${navigator.userAgent}`;
-          console.log('Browser information:', browserInfo);
-          diagnosticInfo += `\n\nBrowser: ${browserInfo}`;
-        } catch (e) {
-          console.error('Error getting browser info:', e);
-        }
-      } else if (errorMessage.includes('CORS') || errorMessage.includes('cross-origin')) {
-        errorMessage = 'Cross-origin request blocked. Please ensure you are running the application from a web server.';
-      } else if (errorMessage.includes('invalid database file') || errorMessage.includes('not a database')) {
-        errorMessage = 'The file you selected is not a valid database file or is corrupted.';
-      } else if (errorMessage.includes('instantiate') || errorMessage.includes('WebAssembly')) {
-        errorMessage = 'Failed to initialize DuckDB WebAssembly module. This may be due to browser security settings or compatibility issues.';
-      }
-      
-      // Create comprehensive error message
-      setError(`Failed to load database file: ${errorMessage}${diagnosticInfo}`);
-      setLoading(false);
-      
-      // Reset the file input so the user can try again with the same file
-      const fileInput = document.getElementById('db-file-input') as HTMLInputElement;
-      if (fileInput) {
-        fileInput.value = '';
-      }
-    }
-  };
+  // This function was removed as we now handle database file uploads through the main App component
   
   return (
     <div style={styles.container} className={className}>
       <div style={styles.header}>
         <h2 style={styles.title}>Database Tables</h2>
-        <div>
-          <input
-            type="file"
-            id="db-file-input"
-            accept=".db,.sqlite,.duckdb"
-            onChange={handleFileUpload}
-            style={styles.fileInput}
-          />
-          <label htmlFor="db-file-input" style={styles.uploadButton}>
-            Open Database
-          </label>
-        </div>
       </div>
       
       {error && (
@@ -221,7 +155,7 @@ const DatabaseExplorer: React.FC<DatabaseExplorerProps> = ({ className }) => {
         </div>
       ) : tables.length === 0 ? (
         <div style={styles.noTables}>
-          <p>No tables found. Upload a database file to get started.</p>
+          <p>No tables found. Click "Upload Files" in the top bar to upload a database file (.db, .sqlite, or .duckdb).</p>
         </div>
       ) : (
         <div style={styles.tableList}>

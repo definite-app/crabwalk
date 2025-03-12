@@ -65,12 +65,26 @@ pub fn generate_mermaid_diagram(sql_folder: &str, dependencies: &HashMap<String,
         tracing::info!("Processing edges for {}", name);
         for dep in &dependency.deps {
             tracing::info!("Checking dependency: {} -> {}", dep, name);
+            
+            // Check for exact match first
             if dependencies.contains_key(dep) {
                 writeln!(file, "    {} --> {}", dep, name)?;
                 tracing::info!("Added edge: {} --> {}", dep, name);
-            } else {
-                tracing::info!("Skipping edge for external dependency: {}", dep);
+                continue;
             }
+            
+            // Handle schema-qualified table names - try to match the base table name
+            if dep.contains('.') {
+                let base_table = dep.split('.').last().unwrap_or(dep);
+                if dependencies.contains_key(base_table) {
+                    writeln!(file, "    {} --> {}", base_table, name)?;
+                    tracing::info!("Added edge for schema-qualified table: {} --> {} (original: {})", base_table, name, dep);
+                    continue;
+                }
+            }
+            
+            // Skip other external dependencies with a note
+            tracing::info!("Skipping edge for external dependency: {}", dep);
         }
     }
     

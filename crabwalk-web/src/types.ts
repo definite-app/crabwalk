@@ -1,6 +1,6 @@
 // Common type definitions for the application
 
-export type FileType = 'schema' | 'lineage' | 'sql';
+export type FileType = 'schema' | 'lineage' | 'sql' | 'database';
 
 export interface ProjectFile {
   name: string;

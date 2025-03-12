@@ -6,6 +6,7 @@ import { parseSchema, generateSchemaHtml } from './utils/schemaParser';
 import { loadProjectFiles } from './utils/projectLoader';
 import { ProjectFile, Table, FileType } from './types';
 import PerspectiveTest from './test/PerspectiveTest';
+import { loadDatabaseFile } from './utils/duckdb';
 
 // Inline styles object with explicit React CSS types
 const styles = {
@@ -198,30 +199,46 @@ function App() {
     
     // Process each uploaded file
     Array.from(e.target.files).forEach(file => {
-      const reader = new FileReader();
-      
-      reader.onload = (event) => {
-        const content = event.target?.result as string;
-        if (!content) return;
+      // Check if it's a database file
+      if (file.name.endsWith('.db') || file.name.endsWith('.sqlite') || file.name.endsWith('.duckdb')) {
+        // Load the database file directly using the DuckDB utility
+        loadDatabaseFile(file)
+          .then(() => {
+            console.log(`Database file '${file.name}' loaded successfully`);
+            // Switch to the tables tab automatically after loading a database
+            setActiveTab('tables');
+          })
+          .catch(error => {
+            console.error(`Error loading database file '${file.name}':`, error);
+            alert(`Failed to load database file: ${error.message}`);
+          });
+      } else {
+        // Handle other file types (SQL, schema, lineage) as before
+        const reader = new FileReader();
         
-        let fileType: FileType = 'sql';
-        if (file.name.includes('schema') && file.name.endsWith('.xml')) {
-          fileType = 'schema';
-        } else if (file.name.endsWith('.mmd') || file.name.includes('lineage')) {
-          fileType = 'lineage';
-        }
-        
-        setFiles(prev => [
-          ...prev,
-          {
-            name: file.name,
-            type: fileType,
-            content
+        reader.onload = (event) => {
+          const content = event.target?.result as string;
+          if (!content) return;
+          
+          let fileType: FileType = 'sql';
+          if (file.name.includes('schema') && file.name.endsWith('.xml')) {
+            fileType = 'schema';
+          } else if (file.name.endsWith('.mmd') || file.name.includes('lineage')) {
+            fileType = 'lineage';
           }
-        ]);
-      };
-      
-      reader.readAsText(file);
+          
+          setFiles(prev => [
+            ...prev,
+            {
+              name: file.name,
+              type: fileType,
+              content
+            }
+          ]);
+        };
+        
+        reader.readAsText(file);
+      }
     });
   };
 
@@ -256,7 +273,7 @@ function App() {
           <h2>No files found</h2>
           <p>{autoDetected 
             ? "No Crabwalk project files were found in this directory." 
-            : "Upload your Crabwalk project files to get started."}</p>
+            : "Upload your database (.db, .sqlite, .duckdb) and Crabwalk project files (.sql, .xml, .mmd) to get started."}</p>
           <button 
             style={styles.button} 
             onClick={handleUploadClick}
@@ -336,10 +353,14 @@ function App() {
         <button style={styles.button} onClick={handleUploadClick}>
           Upload Files
         </button>
+        <span style={{ color: 'white', fontSize: '0.8rem', marginLeft: '10px' }}>
+          (.db, .sql, .xml, .mmd)
+        </span>
         <input
           type="file"
           ref={fileInputRef}
           style={{ display: 'none' }}
+          accept=".sql,.xml,.mmd,.db,.sqlite,.duckdb"
           onChange={handleFileUpload}
           multiple
         />
