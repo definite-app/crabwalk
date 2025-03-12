@@ -20,12 +20,16 @@
     "test:perspective:simple": "vite --open src/test/perspective-simple.html",
     "setup-wasm": "node scripts/setup-wasm.js"
   },
+  "overrides": {
+    "d3-color": "3.1.0"
+  },
   "dependencies": {
     "@duckdb/duckdb-wasm": "^1.29.0",
     "@finos/perspective": "^3.4.0",
     "@finos/perspective-viewer": "^3.4.0",
     "@finos/perspective-viewer-d3fc": "^3.4.0",
     "@finos/perspective-viewer-datagrid": "^3.4.0",
+    "d3-color": "3.1.0",
     "express": "^4.19.2",
     "mermaid": "^11.4.1",
     "react": "^19.0.0",
