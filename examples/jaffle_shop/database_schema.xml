@@ -13,11 +13,11 @@
         <description>Column from query</description>
       </column>
       <source_dependencies>
+        <dependency table="stg_customers" type="transformation"/>
+        <dependency table="stg_orders" type="transformation"/>
         <dependency table="customer_orders_summary" type="transformation"/>
         <dependency table="orders" type="transformation"/>
         <dependency table="joined" type="transformation"/>
-        <dependency table="stg_customers" type="transformation"/>
-        <dependency table="stg_orders" type="transformation"/>
       </source_dependencies>
     </table>
     <table name="locations">
@@ -35,15 +35,15 @@
         <description>Column from query</description>
       </column>
       <source_dependencies>
-        <dependency table="orders" type="transformation"/>
-        <dependency table="stg_orders" type="transformation"/>
-        <dependency table="products" type="transformation"/>
-        <dependency table="supplies" type="transformation"/>
-        <dependency table="stg_supplies" type="transformation"/>
         <dependency table="joined" type="transformation"/>
-        <dependency table="stg_products" type="transformation"/>
+        <dependency table="stg_supplies" type="transformation"/>
+        <dependency table="stg_orders" type="transformation"/>
         <dependency table="order_supplies_summary" type="transformation"/>
+        <dependency table="stg_products" type="transformation"/>
+        <dependency table="products" type="transformation"/>
         <dependency table="stg_order_items" type="transformation"/>
+        <dependency table="orders" type="transformation"/>
+        <dependency table="supplies" type="transformation"/>
       </source_dependencies>
     </table>
     <table name="orders">
@@ -53,11 +53,11 @@
       </column>
       <source_dependencies>
         <dependency table="compute_booleans" type="transformation"/>
-        <dependency table="stg_orders" type="transformation"/>
         <dependency table="order_items_cte" type="transformation"/>
-        <dependency table="order_items" type="transformation"/>
-        <dependency table="order_items_summary" type="transformation"/>
         <dependency table="customer_order_count" type="transformation"/>
+        <dependency table="order_items_summary" type="transformation"/>
+        <dependency table="stg_orders" type="transformation"/>
+        <dependency table="order_items" type="transformation"/>
       </source_dependencies>
     </table>
     <table name="products">
@@ -312,8 +312,8 @@
         <description>Column from query</description>
       </column>
       <source_dependencies>
-        <dependency table="source" type="transformation"/>
         <dependency table="renamed" type="transformation"/>
+        <dependency table="source" type="transformation"/>
         <dependency table="raw_customers" type="transformation"/>
       </source_dependencies>
     </table>
@@ -323,8 +323,8 @@
         <description>Column from query</description>
       </column>
       <source_dependencies>
-        <dependency table="renamed" type="transformation"/>
         <dependency table="raw_stores" type="transformation"/>
+        <dependency table="renamed" type="transformation"/>
         <dependency table="source" type="transformation"/>
       </source_dependencies>
     </table>
@@ -335,8 +335,8 @@
       </column>
       <source_dependencies>
         <dependency table="source" type="transformation"/>
-        <dependency table="renamed" type="transformation"/>
         <dependency table="raw_items" type="transformation"/>
+        <dependency table="renamed" type="transformation"/>
       </source_dependencies>
     </table>
     <table name="stg_orders">
@@ -346,8 +346,8 @@
       </column>
       <source_dependencies>
         <dependency table="renamed" type="transformation"/>
-        <dependency table="source" type="transformation"/>
         <dependency table="raw_orders" type="transformation"/>
+        <dependency table="source" type="transformation"/>
       </source_dependencies>
     </table>
     <table name="stg_products">
@@ -356,8 +356,8 @@
         <description>Column from query</description>
       </column>
       <source_dependencies>
-        <dependency table="renamed" type="transformation"/>
         <dependency table="raw_products" type="transformation"/>
+        <dependency table="renamed" type="transformation"/>
         <dependency table="source" type="transformation"/>
       </source_dependencies>
     </table>
@@ -367,9 +367,9 @@
         <description>Column from query</description>
       </column>
       <source_dependencies>
+        <dependency table="renamed" type="transformation"/>
         <dependency table="raw_supplies" type="transformation"/>
         <dependency table="source" type="transformation"/>
-        <dependency table="renamed" type="transformation"/>
       </source_dependencies>
     </table>
     <table name="supplies">
@@ -384,55 +384,70 @@
   </schema>
   <!-- Entity-Relationship Diagram -->
   <entity_relationships>
-    <relationship type="references" name="stg_supplies_to_raw_supplies">
-      <from table="transform.stg_supplies" column="id"/>
-      <to table="transform.raw_supplies" column="id"/>
-      <description>stg_supplies depends on raw_supplies</description>
-    </relationship>
-    <relationship type="references" name="products_to_stg_products">
-      <from table="transform.products" column="id"/>
-      <to table="transform.stg_products" column="id"/>
-      <description>products depends on stg_products</description>
-    </relationship>
-    <relationship type="references" name="stg_products_to_raw_products">
-      <from table="transform.stg_products" column="id"/>
-      <to table="transform.raw_products" column="id"/>
-      <description>stg_products depends on raw_products</description>
-    </relationship>
-    <relationship type="references" name="orders_to_stg_orders">
-      <from table="transform.orders" column="id"/>
-      <to table="transform.stg_orders" column="id"/>
-      <description>orders depends on stg_orders</description>
-    </relationship>
-    <relationship type="references" name="orders_to_order_items">
-      <from table="transform.orders" column="id"/>
-      <to table="transform.order_items" column="id"/>
-      <description>orders depends on order_items</description>
-    </relationship>
-    <relationship type="references" name="stg_locations_to_raw_stores">
-      <from table="transform.stg_locations" column="id"/>
-      <to table="transform.raw_stores" column="id"/>
-      <description>stg_locations depends on raw_stores</description>
+    <relationship type="references" name="supplies_to_stg_supplies">
+      <from table="transform.supplies" column="id"/>
+      <to table="transform.stg_supplies" column="id"/>
+      <description>supplies depends on stg_supplies</description>
     </relationship>
     <relationship type="references" name="stg_order_items_to_raw_items">
       <from table="transform.stg_order_items" column="id"/>
       <to table="transform.raw_items" column="id"/>
       <description>stg_order_items depends on raw_items</description>
     </relationship>
-    <relationship type="references" name="stg_customers_to_raw_customers">
-      <from table="transform.stg_customers" column="id"/>
-      <to table="transform.raw_customers" column="id"/>
-      <description>stg_customers depends on raw_customers</description>
+    <relationship type="references" name="order_items_to_stg_supplies">
+      <from table="transform.order_items" column="id"/>
+      <to table="transform.stg_supplies" column="id"/>
+      <description>order_items depends on stg_supplies</description>
+    </relationship>
+    <relationship type="references" name="order_items_to_stg_orders">
+      <from table="transform.order_items" column="id"/>
+      <to table="transform.stg_orders" column="id"/>
+      <description>order_items depends on stg_orders</description>
+    </relationship>
+    <relationship type="references" name="order_items_to_stg_products">
+      <from table="transform.order_items" column="id"/>
+      <to table="transform.stg_products" column="id"/>
+      <description>order_items depends on stg_products</description>
+    </relationship>
+    <relationship type="references" name="order_items_to_products">
+      <from table="transform.order_items" column="id"/>
+      <to table="transform.products" column="id"/>
+      <description>order_items depends on products</description>
+    </relationship>
+    <relationship type="references" name="order_items_to_stg_order_items">
+      <from table="transform.order_items" column="id"/>
+      <to table="transform.stg_order_items" column="id"/>
+      <description>order_items depends on stg_order_items</description>
+    </relationship>
+    <relationship type="references" name="order_items_to_orders">
+      <from table="transform.order_items" column="id"/>
+      <to table="transform.orders" column="id"/>
+      <description>order_items depends on orders</description>
+    </relationship>
+    <relationship type="references" name="order_items_to_supplies">
+      <from table="transform.order_items" column="id"/>
+      <to table="transform.supplies" column="id"/>
+      <description>order_items depends on supplies</description>
     </relationship>
     <relationship type="references" name="stg_orders_to_raw_orders">
       <from table="transform.stg_orders" column="id"/>
       <to table="transform.raw_orders" column="id"/>
       <description>stg_orders depends on raw_orders</description>
     </relationship>
-    <relationship type="references" name="customers_to_orders">
-      <from table="transform.customers" column="id"/>
-      <to table="transform.orders" column="id"/>
-      <description>customers depends on orders</description>
+    <relationship type="references" name="locations_to_stg_locations">
+      <from table="transform.locations" column="id"/>
+      <to table="transform.stg_locations" column="id"/>
+      <description>locations depends on stg_locations</description>
+    </relationship>
+    <relationship type="references" name="stg_products_to_raw_products">
+      <from table="transform.stg_products" column="id"/>
+      <to table="transform.raw_products" column="id"/>
+      <description>stg_products depends on raw_products</description>
+    </relationship>
+    <relationship type="references" name="stg_customers_to_raw_customers">
+      <from table="transform.stg_customers" column="id"/>
+      <to table="transform.raw_customers" column="id"/>
+      <description>stg_customers depends on raw_customers</description>
     </relationship>
     <relationship type="references" name="customers_to_stg_customers">
       <from table="transform.customers" column="id"/>
@@ -444,50 +459,35 @@
       <to table="transform.stg_orders" column="id"/>
       <description>customers depends on stg_orders</description>
     </relationship>
-    <relationship type="references" name="order_items_to_orders">
-      <from table="transform.order_items" column="id"/>
+    <relationship type="references" name="customers_to_orders">
+      <from table="transform.customers" column="id"/>
       <to table="transform.orders" column="id"/>
-      <description>order_items depends on orders</description>
+      <description>customers depends on orders</description>
     </relationship>
-    <relationship type="references" name="order_items_to_stg_orders">
-      <from table="transform.order_items" column="id"/>
-      <to table="transform.stg_orders" column="id"/>
-      <description>order_items depends on stg_orders</description>
+    <relationship type="references" name="stg_supplies_to_raw_supplies">
+      <from table="transform.stg_supplies" column="id"/>
+      <to table="transform.raw_supplies" column="id"/>
+      <description>stg_supplies depends on raw_supplies</description>
     </relationship>
-    <relationship type="references" name="order_items_to_products">
-      <from table="transform.order_items" column="id"/>
-      <to table="transform.products" column="id"/>
-      <description>order_items depends on products</description>
+    <relationship type="references" name="stg_locations_to_raw_stores">
+      <from table="transform.stg_locations" column="id"/>
+      <to table="transform.raw_stores" column="id"/>
+      <description>stg_locations depends on raw_stores</description>
     </relationship>
-    <relationship type="references" name="order_items_to_supplies">
-      <from table="transform.order_items" column="id"/>
-      <to table="transform.supplies" column="id"/>
-      <description>order_items depends on supplies</description>
-    </relationship>
-    <relationship type="references" name="order_items_to_stg_supplies">
-      <from table="transform.order_items" column="id"/>
-      <to table="transform.stg_supplies" column="id"/>
-      <description>order_items depends on stg_supplies</description>
-    </relationship>
-    <relationship type="references" name="order_items_to_stg_products">
-      <from table="transform.order_items" column="id"/>
+    <relationship type="references" name="products_to_stg_products">
+      <from table="transform.products" column="id"/>
       <to table="transform.stg_products" column="id"/>
-      <description>order_items depends on stg_products</description>
+      <description>products depends on stg_products</description>
     </relationship>
-    <relationship type="references" name="order_items_to_stg_order_items">
-      <from table="transform.order_items" column="id"/>
-      <to table="transform.stg_order_items" column="id"/>
-      <description>order_items depends on stg_order_items</description>
+    <relationship type="references" name="orders_to_stg_orders">
+      <from table="transform.orders" column="id"/>
+      <to table="transform.stg_orders" column="id"/>
+      <description>orders depends on stg_orders</description>
     </relationship>
-    <relationship type="references" name="locations_to_stg_locations">
-      <from table="transform.locations" column="id"/>
-      <to table="transform.stg_locations" column="id"/>
-      <description>locations depends on stg_locations</description>
-    </relationship>
-    <relationship type="references" name="supplies_to_stg_supplies">
-      <from table="transform.supplies" column="id"/>
-      <to table="transform.stg_supplies" column="id"/>
-      <description>supplies depends on stg_supplies</description>
+    <relationship type="references" name="orders_to_order_items">
+      <from table="transform.orders" column="id"/>
+      <to table="transform.order_items" column="id"/>
+      <description>orders depends on order_items</description>
     </relationship>
   </entity_relationships>
   <!-- Data Lineage -->
@@ -495,7 +495,59 @@
     <transformation name="sql_transformations">
       <description>SQL-based data transformations executed by Crabwalk</description>
       <steps>
-        <step from="multiple" to="transform.raw_products">
+        <step from="multiple" to="transform.supplies">
+          <sources>
+            <source>stg_supplies</source>
+          </sources>
+          <operations>
+            <operation>SQL transformation</operation>
+          </operations>
+        </step>
+        <step from="multiple" to="transform.stg_order_items">
+          <sources>
+            <source>source</source>
+            <source>raw_items</source>
+            <source>renamed</source>
+          </sources>
+          <operations>
+            <operation>SQL transformation</operation>
+          </operations>
+        </step>
+        <step from="multiple" to="transform.order_items">
+          <sources>
+            <source>joined</source>
+            <source>stg_supplies</source>
+            <source>stg_orders</source>
+            <source>order_supplies_summary</source>
+            <source>stg_products</source>
+            <source>products</source>
+            <source>stg_order_items</source>
+            <source>orders</source>
+            <source>supplies</source>
+          </sources>
+          <operations>
+            <operation>SQL transformation</operation>
+          </operations>
+        </step>
+        <step from="multiple" to="transform.stg_orders">
+          <sources>
+            <source>renamed</source>
+            <source>raw_orders</source>
+            <source>source</source>
+          </sources>
+          <operations>
+            <operation>SQL transformation</operation>
+          </operations>
+        </step>
+        <step from="multiple" to="transform.locations">
+          <sources>
+            <source>stg_locations</source>
+          </sources>
+          <operations>
+            <operation>SQL transformation</operation>
+          </operations>
+        </step>
+        <step from="multiple" to="transform.raw_orders">
           <sources>
             <source>read_csv</source>
           </sources>
@@ -503,24 +555,19 @@
             <operation>SQL transformation</operation>
           </operations>
         </step>
-        <step from="source" to="transform.raw_payments">
-          <operations>
-            <operation>Source data load</operation>
-          </operations>
-        </step>
-        <step from="multiple" to="transform.stg_supplies">
+        <step from="multiple" to="transform.stg_products">
           <sources>
-            <source>raw_supplies</source>
-            <source>source</source>
+            <source>raw_products</source>
             <source>renamed</source>
+            <source>source</source>
           </sources>
           <operations>
             <operation>SQL transformation</operation>
           </operations>
         </step>
-        <step from="multiple" to="transform.products">
+        <step from="multiple" to="transform.raw_products">
           <sources>
-            <source>stg_products</source>
+            <source>read_csv</source>
           </sources>
           <operations>
             <operation>SQL transformation</operation>
@@ -534,30 +581,57 @@
             <operation>SQL transformation</operation>
           </operations>
         </step>
-        <step from="multiple" to="transform.stg_products">
+        <step from="multiple" to="transform.raw_items">
+          <sources>
+            <source>read_csv</source>
+          </sources>
+          <operations>
+            <operation>SQL transformation</operation>
+          </operations>
+        </step>
+        <step from="multiple" to="transform.stg_customers">
           <sources>
             <source>renamed</source>
-            <source>raw_products</source>
+            <source>source</source>
+            <source>raw_customers</source>
+          </sources>
+          <operations>
+            <operation>SQL transformation</operation>
+          </operations>
+        </step>
+        <step from="multiple" to="transform.customers">
+          <sources>
+            <source>stg_customers</source>
+            <source>stg_orders</source>
+            <source>customer_orders_summary</source>
+            <source>orders</source>
+            <source>joined</source>
+          </sources>
+          <operations>
+            <operation>SQL transformation</operation>
+          </operations>
+        </step>
+        <step from="multiple" to="transform.stg_supplies">
+          <sources>
+            <source>renamed</source>
+            <source>raw_supplies</source>
             <source>source</source>
           </sources>
           <operations>
             <operation>SQL transformation</operation>
           </operations>
         </step>
-        <step from="multiple" to="transform.orders">
+        <step from="multiple" to="transform.stg_locations">
           <sources>
-            <source>compute_booleans</source>
-            <source>stg_orders</source>
-            <source>order_items_cte</source>
-            <source>order_items</source>
-            <source>order_items_summary</source>
-            <source>customer_order_count</source>
+            <source>raw_stores</source>
+            <source>renamed</source>
+            <source>source</source>
           </sources>
           <operations>
             <operation>SQL transformation</operation>
           </operations>
         </step>
-        <step from="multiple" to="transform.raw_orders">
+        <step from="multiple" to="transform.raw_stores">
           <sources>
             <source>read_csv</source>
           </sources>
@@ -573,104 +647,30 @@
             <operation>SQL transformation</operation>
           </operations>
         </step>
-        <step from="multiple" to="transform.stg_locations">
+        <step from="multiple" to="transform.products">
           <sources>
-            <source>renamed</source>
-            <source>raw_stores</source>
-            <source>source</source>
-          </sources>
-          <operations>
-            <operation>SQL transformation</operation>
-          </operations>
-        </step>
-        <step from="multiple" to="transform.raw_items">
-          <sources>
-            <source>read_csv</source>
-          </sources>
-          <operations>
-            <operation>SQL transformation</operation>
-          </operations>
-        </step>
-        <step from="multiple" to="transform.stg_order_items">
-          <sources>
-            <source>source</source>
-            <source>renamed</source>
-            <source>raw_items</source>
-          </sources>
-          <operations>
-            <operation>SQL transformation</operation>
-          </operations>
-        </step>
-        <step from="multiple" to="transform.stg_customers">
-          <sources>
-            <source>source</source>
-            <source>renamed</source>
-            <source>raw_customers</source>
-          </sources>
-          <operations>
-            <operation>SQL transformation</operation>
-          </operations>
-        </step>
-        <step from="multiple" to="transform.stg_orders">
-          <sources>
-            <source>renamed</source>
-            <source>source</source>
-            <source>raw_orders</source>
-          </sources>
-          <operations>
-            <operation>SQL transformation</operation>
-          </operations>
-        </step>
-        <step from="multiple" to="transform.customers">
-          <sources>
-            <source>customer_orders_summary</source>
-            <source>orders</source>
-            <source>joined</source>
-            <source>stg_customers</source>
-            <source>stg_orders</source>
-          </sources>
-          <operations>
-            <operation>SQL transformation</operation>
-          </operations>
-        </step>
-        <step from="multiple" to="transform.order_items">
-          <sources>
-            <source>orders</source>
-            <source>stg_orders</source>
-            <source>products</source>
-            <source>supplies</source>
-            <source>stg_supplies</source>
-            <source>joined</source>
             <source>stg_products</source>
-            <source>order_supplies_summary</source>
-            <source>stg_order_items</source>
           </sources>
           <operations>
             <operation>SQL transformation</operation>
           </operations>
         </step>
-        <step from="multiple" to="transform.locations">
+        <step from="multiple" to="transform.orders">
           <sources>
-            <source>stg_locations</source>
+            <source>compute_booleans</source>
+            <source>order_items_cte</source>
+            <source>customer_order_count</source>
+            <source>order_items_summary</source>
+            <source>stg_orders</source>
+            <source>order_items</source>
           </sources>
           <operations>
             <operation>SQL transformation</operation>
           </operations>
         </step>
-        <step from="multiple" to="transform.raw_stores">
-          <sources>
-            <source>read_csv</source>
-          </sources>
+        <step from="source" to="transform.raw_payments">
           <operations>
-            <operation>SQL transformation</operation>
-          </operations>
-        </step>
-        <step from="multiple" to="transform.supplies">
-          <sources>
-            <source>stg_supplies</source>
-          </sources>
-          <operations>
-            <operation>SQL transformation</operation>
+            <operation>Source data load</operation>
           </operations>
         </step>
       </steps>

@@ -6,6 +6,10 @@
 
 Crabwalk is a lightweight SQL orchestrator built on top of DuckDB. It processes SQL files in a folder, determines dependencies, and runs them in the correct order.
 
+## Demo Video
+
+[![Crabwalk Demo](https://img.youtube.com/vi/bjLOfwvRSqY/0.jpg)](https://www.youtube.com/watch?v=bjLOfwvRSqY)
+
 ## Features
 
 - **SQL Orchestration**: Automatically determine the execution order of SQL queries based on dependencies

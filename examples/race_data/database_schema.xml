@@ -118,11 +118,11 @@
         </source>
       </column>
       <source_dependencies>
-        <dependency table="driver_lap_data" type="transformation"/>
-        <dependency table="transform.races" type="transformation"/>
         <dependency table="driver_max_laps" type="transformation"/>
         <dependency table="driver_rankings" type="transformation"/>
+        <dependency table="transform.races" type="transformation"/>
         <dependency table="driver_metrics" type="transformation"/>
+        <dependency table="driver_lap_data" type="transformation"/>
         <dependency table="driver_first_last_laps" type="transformation"/>
       </source_dependencies>
     </table>
@@ -166,8 +166,8 @@
       </column>
       <source_dependencies>
         <dependency table="driver_stats" type="transformation"/>
-        <dependency table="transform.races" type="transformation"/>
         <dependency table="lap_times_in_seconds" type="transformation"/>
+        <dependency table="transform.races" type="transformation"/>
       </source_dependencies>
     </table>
     <table name="races">
@@ -202,13 +202,21 @@
     <transformation name="sql_transformations">
       <description>SQL-based data transformations executed by Crabwalk</description>
       <steps>
+        <step from="multiple" to="transform.sample_parquet">
+          <sources>
+            <source>races</source>
+          </sources>
+          <operations>
+            <operation>SQL transformation</operation>
+          </operations>
+        </step>
         <step from="multiple" to="transform.driver_fact">
           <sources>
-            <source>driver_lap_data</source>
-            <source>transform.races</source>
             <source>driver_max_laps</source>
             <source>driver_rankings</source>
+            <source>transform.races</source>
             <source>driver_metrics</source>
+            <source>driver_lap_data</source>
             <source>driver_first_last_laps</source>
           </sources>
           <column_lineage>
@@ -277,16 +285,6 @@
             <operation>SQL transformation</operation>
           </operations>
         </step>
-        <step from="multiple" to="transform.race_summary">
-          <sources>
-            <source>driver_stats</source>
-            <source>transform.races</source>
-            <source>lap_times_in_seconds</source>
-          </sources>
-          <operations>
-            <operation>SQL transformation</operation>
-          </operations>
-        </step>
         <step from="multiple" to="transform.races">
           <sources>
             <source>read_csv_auto</source>
@@ -295,9 +293,11 @@
             <operation>SQL transformation</operation>
           </operations>
         </step>
-        <step from="multiple" to="transform.sample_parquet">
+        <step from="multiple" to="transform.race_summary">
           <sources>
-            <source>races</source>
+            <source>driver_stats</source>
+            <source>lap_times_in_seconds</source>
+            <source>transform.races</source>
           </sources>
           <operations>
             <operation>SQL transformation</operation>
